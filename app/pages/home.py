@@ -2,6 +2,7 @@ import streamlit as st
 import boto3
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 from io import BytesIO
 from dotenv import load_dotenv
 import os
@@ -50,10 +51,39 @@ def format_salary(value):
 # Fetch data
 data = load_data()
 
-data = data[data['max_salary'] < 200000]
+# Filter out rows with unusually high salaries
+data = data[data['avg_salary'] < 200000]
 
 # ---- Main Page Content ----
 st.title("yourfirstdatajob")
+
+# ---- Insights Section ----
+st.write("### 📊 Insights")
+
+# Calculate insights only if there's data in the filtered dataset
+if not data.empty:
+    # Get the top two most demanded job categories
+    top_categories = data['job_category'].value_counts().head(2)
+    most_demanded_category_1 = top_categories.index[0] if len(top_categories) > 0 else None
+    most_demanded_category_2 = top_categories.index[1] if len(top_categories) > 1 else None
+
+    # Calculate median experience needed and average salary
+    median_experience = data['experience'].median() if not data['experience'].isnull().all() else None
+    avg_salary = data['avg_salary'].mean() if not data['avg_salary'].isnull().all() else None
+
+    # Display the insights with emojis
+    if most_demanded_category_1:
+        st.write(f"🔹 **Most demanded job category:** {most_demanded_category_1}")
+    if most_demanded_category_2:
+        st.write(f"🔹 **Second most demanded job category:** {most_demanded_category_2}")
+    
+    if median_experience is not None:
+        st.write(f"📈 **Median experience needed:** {median_experience:.0f} years")
+    
+    if avg_salary is not None:
+        st.write(f"💰 **Average salary:** {format_salary(avg_salary)}")
+else:
+    st.write("No data available to generate insights.")
 
 # ---- Filter Section ----
 st.write("### Filter Options")
@@ -74,6 +104,7 @@ with col3:
     months = data['month'].unique().tolist()
     selected_month = st.selectbox("Select Month", options=["All"] + months)
 
+# Apply filters to data
 filtered_data = data.copy()
 if selected_category != "All":
     filtered_data = filtered_data[filtered_data['job_category'] == selected_category]
@@ -106,12 +137,36 @@ with col4:
 
 # ---- Most Demanded Job Categories Section ----
 st.write("### Most Demanded Job Categories")
+
 if not filtered_data.empty:
-    most_demanded_jobs = filtered_data['job_category'].value_counts().sort_values(ascending=False).head(10)
-    st.bar_chart(most_demanded_jobs)
+    # Get the top 10 most demanded job categories in descending order
+    most_demanded_jobs = (
+        filtered_data['job_category']
+        .value_counts()
+        .sort_values(ascending=False)
+        .head(10)
+    )
+
+    # Plot using Plotly
+    fig = go.Figure(data=[
+        go.Bar(
+            x=most_demanded_jobs.index,
+            y=most_demanded_jobs.values,
+            text=most_demanded_jobs.values,
+            textposition='auto'
+        )
+    ])
+    fig.update_layout(
+        title="Top 10 Most Demanded Job Categories",
+        xaxis_title="Job Category",
+        yaxis_title="Number of Jobs",
+        template="plotly_white"
+    )
+    st.plotly_chart(fig)
 else:
     st.write("No data available for the selected filters.")
 
+# ---- Job Locations Map Section ----
 st.write("### Job Locations Map")
 if not filtered_data.empty:
     job_counts = filtered_data.groupby(['latitude', 'longitude']).size().reset_index(name='job_count')
@@ -128,8 +183,8 @@ if not filtered_data.empty:
     )
     fig.update_layout(
         autosize=False,
-        width=1000,  # Set the width you prefer
-        height=700   # Set the height you prefer
+        width=1000,
+        height=700
     )
     st.plotly_chart(fig)
 else:

@@ -7,6 +7,9 @@ from dotenv import load_dotenv
 import os
 import re
 
+# Set page config for full width layout
+st.set_page_config(page_title="Job Opportunities Analysis", layout="wide")
+
 # Load environment variables from .env
 load_dotenv('../.env')
 
@@ -22,7 +25,6 @@ s3_client = boto3.client(
     aws_secret_access_key=AWS_SECRET_KEY
 )
 
-#@st.cache_data
 def get_latest_file():
     # List files in the bucket with the specified prefix
     response = s3_client.list_objects_v2(Bucket=BUCKET_NAME, Prefix=FILE_PREFIX)
@@ -35,7 +37,6 @@ def get_latest_file():
 
     return latest_file
 
-#@st.cache_data
 def load_data():
     # Get the latest file and read it as a Parquet file into a DataFrame
     latest_file_key = get_latest_file()
@@ -53,75 +54,87 @@ data = load_data()
 data = data[data['max_salary'] < 200000]
 
 # ---- Analysis Page Content ----
-st.title("Job Opportunities Analysis - Detailed")
-
+st.title("Job Opportunities Analysis - Statistics")
 
 # ---- Experience Analysis ----
-st.write("### Experience by Job")
+st.write("## Experience by Job")
 data['experience_rounded'] = data['experience'].round().astype(int)  # Round experience for cleaner visuals
 
 if not data.empty:
+    # Create box plot
     fig_exp_box = px.box(
         data,
         x='job_category',
         y='experience_rounded',
         points=False,  # Disable outlier points
-        title="Experience Requirement by Job Category (Without Outliers)",
+        #title="Experience Requirement by Job Category (Without Outliers)",
         labels={'experience_rounded': 'Years of Experience', 'job_category': 'Job Category'}
     )
     st.plotly_chart(fig_exp_box)
-else:
-    st.write("No data available for Experience Analysis.")
+
+    # Summary table for experience (transposed, only average)
+    exp_summary = data.groupby('job_category')['experience_rounded'].mean().reset_index()
+    exp_summary.columns = ['Job Category', 'Average Experience']
+    exp_summary['Average Experience'] = exp_summary['Average Experience'].astype(int)  # Convert to int for display
+    exp_summary = exp_summary.set_index('Job Category').T  # Transpose the summary
+
+
+    # Insights for experience
+    most_experience_job = exp_summary.loc['Average Experience'].idxmax()
+    least_experience_job = exp_summary.loc['Average Experience'].idxmin()
+    st.write("📊 **Insights:**")
+    st.write(f"The job with the most years of experience required is **{most_experience_job}**.")
+    st.write(f"The job with the least years of experience required is **{least_experience_job}**.")
+    st.table(exp_summary)
 
 # ---- Salary Analysis by Job ----
-st.write("### Salary by Job")
+st.write("## Salary by Job")
 data['avg_salary_rounded'] = data['avg_salary'].round()  # Round average salary
 
 if not data.empty:
-    # Box plot for salary distribution by job category
+    # Create box plot
     fig_salary_job_box = px.box(
         data,
         x='job_category',
         y='avg_salary_rounded',
-        points=False,  # Disable outlier points
-        title="Salary Distribution by Job Category (Without Outliers)",
+        points=False,
+       # title="Salary Distribution by Job Category (Without Outliers)",
         labels={'avg_salary_rounded': 'Average Salary (€)', 'job_category': 'Job Category'}
     )
     st.plotly_chart(fig_salary_job_box)
-else:
-    st.write("No data available for Salary Analysis by Job.")
+
+    # Summary table for salary by job category (transposed, only average)
+    salary_summary = data.groupby('job_category')['avg_salary_rounded'].mean().reset_index()
+    salary_summary.columns = ['Job Category', 'Average Salary (€)']
+    salary_summary['Average Salary (€)'] = salary_summary['Average Salary (€)'].apply(lambda x: f"{int(x):,}")  # Format salary
+    salary_summary = salary_summary.set_index('Job Category').T  # Transpose the summary
+
+    # Insights for salary
+    highest_salary_job = salary_summary.loc['Average Salary (€)'].idxmax()
+    lowest_salary_job = salary_summary.loc['Average Salary (€)'].idxmin()
+    st.write("💼 **Insights:**")
+    st.write(f"The job with the highest average salary is **{highest_salary_job}**.")
+    st.write(f"The job with the lowest average salary is **{lowest_salary_job}**.")
+    st.table(salary_summary)
 
 # ---- Salary Analysis by Years of Experience ----
 st.write("### Salary by Years of Experience")
 if not data.empty:
+    # Create box plot
     fig_salary_exp = px.box(
         data,
         x='experience_rounded',
         y='avg_salary_rounded',
-        points=False,  # Disable outlier points
-        title="Salary by Years of Experience (Without Outliers)",
+        points=False,
+        #title="Salary by Years of Experience (Without Outliers)",
         labels={'experience_rounded': 'Years of Experience', 'avg_salary_rounded': 'Average Salary (€)'}
     )
     st.plotly_chart(fig_salary_exp)
-else:
-    st.write("No data available for Salary Analysis by Experience.")
 
-# ---- Scatter Plot for Rounded Data ----
-st.write("### Salary by Job Category and Experience")
-# Group by job category and experience level, and calculate average salary to smooth out the data
-grouped_data = data.groupby(['job_category', 'experience_rounded']).agg(avg_salary=('avg_salary_rounded', 'mean')).reset_index()
-
-if not grouped_data.empty:
-    fig_salary_exp_scatter = px.scatter(
-        grouped_data,
-        x='experience_rounded',
-        y='avg_salary',
-        color='job_category',
-        size='avg_salary',
-        title="Average Salary by Experience and Job Category",
-        labels={'experience_rounded': 'Years of Experience', 'avg_salary': 'Average Salary (€)', 'job_category': 'Job Category'},
-        color_discrete_sequence=px.colors.qualitative.Plotly
-    )
-    st.plotly_chart(fig_salary_exp_scatter)
-else:
-    st.write("No data available for Salary Analysis by Job Category and Experience.")
+    # Summary table for salary by years of experience (transposed, only average)
+    exp_salary_summary = data.groupby('experience_rounded')['avg_salary_rounded'].mean().reset_index()
+    exp_salary_summary.columns = ['Years of Experience', 'Average Salary (€)']
+    exp_salary_summary['Average Salary (€)'] = exp_salary_summary['Average Salary (€)'].apply(lambda x: f"{int(x):,}")  # Format salary
+    exp_salary_summary = exp_salary_summary.set_index('Years of Experience').T  # Transpose the summary
+    st.write("📈 **Average Salary by Years of Experience:**")
+    st.table(exp_salary_summary)
