@@ -51,7 +51,9 @@ def format_salary(value):
 # Fetch data
 data = load_data()
 
-data = data[data['max_salary'] < 200000]
+data = data[data['experience'].notnull()]
+data['experience'] = data['experience'].astype(int) 
+data = data[data['experience'] > 0]
 
 # ---- Analysis Page Content ----
 st.title("Job Opportunities Analysis - Statistics")
@@ -87,7 +89,10 @@ if not data.empty:
     st.write(f"The job with the least years of experience required is **{least_experience_job}**.")
     st.table(exp_summary)
 
+
+data = data[data['max_salary'] < 200000]
 # ---- Salary Analysis by Job ----
+
 st.write("## Salary by Job")
 data['avg_salary_rounded'] = data['avg_salary'].round()  # Round average salary
 

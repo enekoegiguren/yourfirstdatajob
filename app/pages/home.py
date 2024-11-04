@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 import os
 import re
 
+
 # Load environment variables from .env
 load_dotenv('../.env')
 
@@ -48,11 +49,12 @@ def load_data():
 def format_salary(value):
     return f"{value / 1000:.0f}k €"
 
+st.set_page_config(page_title="Job Opportunities Analysis", layout="wide")
 # Fetch data
 data = load_data()
 
 # Filter out rows with unusually high salaries
-data = data[data['avg_salary'] < 200000]
+#data_salary = data[data['avg_salary'] < 200000]
 
 # ---- Main Page Content ----
 st.title("yourfirstdatajob")
@@ -68,7 +70,7 @@ if not data.empty:
     most_demanded_category_2 = top_categories.index[1] if len(top_categories) > 1 else None
 
     # Calculate median experience needed and average salary
-    median_experience = data['experience'].median() if not data['experience'].isnull().all() else None
+    average_experience = data['experience'].mean() if not data['experience'].isnull().all() else None
     avg_salary = data['avg_salary'].mean() if not data['avg_salary'].isnull().all() else None
 
     # Display the insights with emojis
@@ -77,8 +79,8 @@ if not data.empty:
     if most_demanded_category_2:
         st.write(f"🔹 **Second most demanded job category:** {most_demanded_category_2}")
     
-    if median_experience is not None:
-        st.write(f"📈 **Median experience needed:** {median_experience:.0f} years")
+    if average_experience is not None:
+        st.write(f"📈 **Average experience needed:** {average_experience:.1f} years")
     
     if avg_salary is not None:
         st.write(f"💰 **Average salary:** {format_salary(avg_salary)}")
@@ -94,13 +96,12 @@ with col1:
     selected_category = st.selectbox("Select Job Category", options=["All"] + job_categories)
 
 with col2:
-    data['extracted_date'] = pd.to_datetime(data['extracted_date'])
-    data['year'] = data['extracted_date'].dt.year
+    #data['year'] = data['extracted_date'].dt.year
     years = data['year'].unique().tolist()
     selected_year = st.selectbox("Select Year", options=["All"] + years)
 
 with col3:
-    data['month'] = data['extracted_date'].dt.month
+    #data['month'] = data['extracted_date'].dt.month
     months = data['month'].unique().tolist()
     selected_month = st.selectbox("Select Month", options=["All"] + months)
 
@@ -124,7 +125,7 @@ st.write("### Key Performance Indicators (KPIs)")
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
-    st.metric("Average Experience (Years)", f"{average_experience:.0f}", " ")
+    st.metric("Average Experience (Years)", f"{average_experience:.1f}", " ")
 
 with col2:
     st.metric("Minimum Salary (€)", format_salary(min_salary))
@@ -189,3 +190,32 @@ if not filtered_data.empty:
     st.plotly_chart(fig)
 else:
     st.write("No data available to display on the map.")
+
+
+# ---- Job Contract Types ---- 
+st.write("### Contract Types")
+
+if not filtered_data.empty:
+    # Calculate the contract type counts and percentages
+    contract_counts = filtered_data['contract_type'].value_counts()
+    total_contracts = contract_counts.sum()
+    top_contract_type = contract_counts.idxmax()
+    top_contract_percentage = (contract_counts.max() / total_contracts) * 100
+
+    # Display an insight about the most common contract type
+    st.write(f"🔹 **Insight:** {top_contract_percentage:.1f}% of the contracts are '{top_contract_type}'.")
+
+    # Create a larger pie chart
+    fig = px.pie(
+        contract_counts,
+        values=contract_counts.values,
+        names=contract_counts.index,
+       # title="Contract Type Distribution",
+        hole=0.3,
+        color_discrete_sequence=px.colors.qualitative.Pastel
+    )
+
+    # Adjust the layout for a larger display
+    fig.update_traces(textinfo='percent+label', pull=[0.1 if t == top_contract_type else 0 for t in contract_counts.index])
+    fig.update_layout(width=1300, height=700)  # Adjust width and height as desired
+    st.plotly_chart(fig)
