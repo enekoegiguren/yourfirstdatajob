@@ -123,7 +123,7 @@ if not data.empty:
     st.table(salary_summary)
 
 # ---- Salary Analysis by Years of Experience ----
-st.write("### Salary by Years of Experience")
+st.write("## Salary by Years of Experience")
 if not data.empty:
     # Create box plot
     fig_salary_exp = px.box(

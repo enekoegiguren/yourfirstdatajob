@@ -11,23 +11,31 @@ home_page = st.Page(
     icon = ":material/home:"
 )
 
-analysis = st.Page(
-    page = 'pages/analysis.py',
-    title = "Analysis",
+statistics = st.Page(
+    page = 'pages/analysis_statistics.py',
+    title = "Statistics",
     icon = ":material/home:"
 )
 
 Data_stack = st.Page(
-    page = 'pages/data_stack.py',
+    page = 'pages/analysis_data_stack.py',
     title = "Data stack",
+    icon = ":material/home:"
+)
+
+
+personal = st.Page(
+    page = 'pages/personal.py',
+    title = "Your profile analysis",
     icon = ":material/home:"
 )
 
 # ---- NAVIGATION SETUP
 pg = st.navigation(
     {
-        "Home": [home_page],
-        "Insights": [analysis, Data_stack]
+        "": [home_page],
+        "Analysis - Insights": [statistics, Data_stack],
+        "You": [personal]
     }
 )
 

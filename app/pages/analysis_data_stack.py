@@ -61,6 +61,7 @@ skills_columns = [
 for col in skills_columns:
     data[col] = data[col].apply(lambda x: 1 if x == 'Y' else 0)
 
+
 # Streamlit App Layout
 st.title("Data stack")
 st.write("### Analyzing job listings to identify trends and correlations.")
@@ -69,13 +70,32 @@ st.write("### Analyzing job listings to identify trends and correlations.")
 st.write("## Top Demanded Skills")
 
 if not data.empty:
-   # filtered_data = data[data[skills_columns].any(axis=1)]  # Filter rows with at least one skill = 1
+    rows_with_skill = data[skills_columns].any(axis=1).sum()
+    perc_rows_with_skill = rows_with_skill / len(data) *100
+    
+    st.metric(label="% Job with skills demanded", value=f"{perc_rows_with_skill:.1f}%")
+    
+    
+    # filtered_data = data[data[skills_columns].any(axis=1)]  # Filter rows with at least one skill = 1
     skill_counts = data[skills_columns].sum().sort_values(ascending=False)
-
+    #Insights
+    st.write("### 📊 Insights")
+    
+    top_skills = skill_counts.head(3).index.tolist() if not skill_counts.empty else []
+    
+    # Display insights for the top three demanded skills
+    if top_skills:
+        st.write("🔍 **Top 3 demanded skills:**")
+        # Slice the list to get the top 3 skills
+        for i, skill in enumerate(top_skills[:3], 1):  # Use slicing to get the first 3 elements
+            # Calculate percentage of jobs requiring each top skill
+            perc_jobs_with_skill = (data[skill].sum() / len(data)) * 100
+            st.write(f"   {i}. **{skill.capitalize()}**: {perc_jobs_with_skill:.1f}% jobs require this skill")
 
     # Option to select number of top skills to display
     top_n_options = st.selectbox("Select number of top skills to display:", options=["Top 10", "Top 20", "Top 30", "All"])
-    
+
+    # Determine the top N skills based on user selection
     if top_n_options == "Top 10":
         top_n_skills = skill_counts.head(10)
     elif top_n_options == "Top 20":
@@ -85,137 +105,68 @@ if not data.empty:
     else:
         top_n_skills = skill_counts  # "All"
 
-    # Create bar chart for selected top skills
+    # Calculate percentages for the selected top N skills
+    perc_top_n_skills = (top_n_skills.values / len(data)) * 100  # Calculate percentages for the skills
+
+    # Create a Plotly bar chart for the selected top skills
     fig = go.Figure(data=[go.Bar(
         x=top_n_skills.index,
-        y=top_n_skills.values,
-        text=top_n_skills.values,
+        y=perc_top_n_skills,  # Use percentages for the y-axis
+        text=[f"{perc:.0f}%" for perc in perc_top_n_skills],  # Display percentage in the text
         textposition='auto'
     )])
-    
+
     fig.update_layout(
         xaxis_title="Skills",
+        yaxis_title="Percentage",
         title=f"{top_n_options} Most Demanded Skills",
         template="plotly_white"
     )
+
     st.plotly_chart(fig)
+
 else:
     st.write("No data available for the selected filters.")
 
 if not data.empty:
-# Filter for job category with default selection set to "Data Engineer"
+    # Filter for job category with default selection set to "Data Engineer"
     job_categories = data['job_category'].unique()
     default_category = "Data Engineer" if "Data Engineer" in job_categories else job_categories[0]
+    st.write("## Top 10 Skills Depending on the Job Category")
     selected_category = st.selectbox("Select Job Category", options=job_categories, index=list(job_categories).index(default_category))
 
-    # 2. Filtered Top 10 Skills for Selected Job Category
-    st.write(f"## Top 10 Skills for {selected_category} Category")
-
     if 'job_category' in data.columns:
-        # Filter data based on selected job category
+        # Filter data based on the selected job category
         filtered_data = data[data['job_category'] == selected_category]
-        
+
         # Calculate skill counts for the filtered data
         filtered_skill_counts = filtered_data[skills_columns].sum().sort_values(ascending=False).head(10)
-        
-        # Display top 10 demanded skills for the selected job category
-       # st.bar_chart(filtered_skill_counts)
-           # Create bar chart for selected top skills
+
+        # Calculate the total count of skills for the selected job category
+        total_skill_count = filtered_skill_counts.sum()
+
+        # Calculate the percentage for each skill
+        skill_percentages = (filtered_skill_counts / total_skill_count) * 100
+
+        # Create a Plotly bar chart for the selected top skills
         fig = go.Figure(data=[go.Bar(
             x=filtered_skill_counts.index,
-            y=filtered_skill_counts.values,
-            text=filtered_skill_counts.values,
+            y=skill_percentages,  # Use skill percentages for the y-axis
+            text=[f"{percentage:.1f}%" for percentage in skill_percentages],  # Display percentages
             textposition='auto'
         )])
-        
+
         fig.update_layout(
-            xaxis_title=f"Most demanded skills",
-            title=f"{top_n_options} Most Demanded Skills for {selected_category}",
+            xaxis_title="Most Demanded Skills",
+            yaxis_title="Percentage",
+            title=f"Top 10 Most Demanded Skills for {selected_category}",
             template="plotly_white"
         )
         st.plotly_chart(fig)
 
 else:      
     st.write("Job category data is not available for analysis.")
-    
 
-# 3. Correlation with Top Skills
-st.write("## Correlation Between Top Skills")
-
-if not data.empty:
-    # Get the top 20 skills
-    top_10_skills = skill_counts.head(5).index
-    
-    # Create a new DataFrame with only the top skills
-    correlation_data = data[[*top_10_skills, 'job_category']].copy()
-    
-    # Convert job_category to numeric for correlation calculation
-    correlation_data['job_category'] = pd.factorize(correlation_data['job_category'])[0]
-
-    # Calculate the correlation matrix
-    correlation_matrix = correlation_data.corr()
-
-    # Create a heatmap for top skills using Plotly
-    fig_correlation = px.imshow(
-        correlation_matrix.loc[top_10_skills, top_10_skills],
-        color_continuous_scale='RdBu',
-        zmin=-1, zmax=1,
-        title='Correlation Matrix of Top Skills',
-        labels=dict(x="Skills", y="Skills"),
-        aspect="auto"
-    )
-    st.plotly_chart(fig_correlation)
-
-
-# Skill Ranking for Jobs
-st.write("## Job Ranking by Selected Skill")
-
-all_skills = skills_columns 
-# Select a skill for job ranking
-selected_skill = st.selectbox(
-    'Select a Skill to Rank Jobs:',
-    options=all_skills
-)
-
-# Skill Ranking for Jobs
-st.write("## Job Ranking by Selected Skills")
-
-# Select multiple skills for job ranking
-selected_skills_for_ranking = st.multiselect(
-    'Select Skills to Rank Jobs:',
-    options=all_skills,
-    default=top_10_skills  # Default to all top 10 skills selected
-)
-
-# Filter data for the selected skills
-if selected_skills_for_ranking:
-    # Create a boolean mask for any of the selected skills being present
-    mask = data[selected_skills_for_ranking].any(axis=1)
-    jobs_with_skills = data[mask]  # Filtered data with any of the selected skills
-
-    # Count occurrences of job categories
-    job_counts = jobs_with_skills['job_category'].value_counts().reset_index()
-    job_counts.columns = ['Job Category', 'Count']  # Change 'Job Title' to 'Job Category'
-
-    # Sort by Count
-    job_counts = job_counts.sort_values(by='Count', ascending=False)
-
-    # Display the job ranking
-    #st.write("Job Categories that require any of the selected skills:")
-  #  st.dataframe(job_counts)
-
-    # Optionally, you can visualize the job counts
-    fig_job_ranking = px.bar(
-        job_counts,
-        x='Job Category',
-        y='Count',
-        title='Job Counts for Selected Skills: {}'.format(', '.join(selected_skills_for_ranking)),
-        labels={'Job Category': 'Job Category', 'Count': 'Number of Listings'},
-        color='Count'
-    )
-
-    st.plotly_chart(fig_job_ranking)
-    
 # Temporal Evolution of Skills
 st.write("## Temporal Evolution of Skills")
 
@@ -271,9 +222,67 @@ else:
     st.write("No data available for temporal evolution analysis.")
 
 
+# Correlation with Top Skills
+st.write("## Correlation Between Top Skills")
+
+if not data.empty:
+    # Get the top 20 skills
+    top_10_skills = skill_counts.head(20).index
+
+    # Create a new DataFrame with only the top skills
+    correlation_data = data[[*top_10_skills, 'job_category']].copy()
+
+    # Convert job_category to numeric for correlation calculation
+    correlation_data['job_category'] = pd.factorize(correlation_data['job_category'])[0]
+
+    # Calculate the correlation matrix
+    correlation_matrix = correlation_data.corr()
+
+    # Create a heatmap for top skills using Plotly
+    fig_correlation = px.imshow(
+        correlation_matrix.loc[top_10_skills, top_10_skills],
+        color_continuous_scale='RdBu',
+        zmin=-1, zmax=1,
+        title='Correlation Matrix of Top Skills',
+        labels=dict(x="Skills", y="Skills"),
+        aspect="auto"
+    )
+
+    # Display the heatmap
+    st.plotly_chart(fig_correlation)
+
+    # Display insights based on the correlation matrix
+    st.write("### 📊 Insights")
+
+    # Extract significant correlations
+    significant_correlations = correlation_matrix.loc[top_10_skills, top_10_skills].stack().reset_index()
+    significant_correlations.columns = ['Skill 1', 'Skill 2', 'Correlation']
+
+    # Filter for strong positive or negative correlations, excluding self-correlations
+    strong_correlations = significant_correlations[
+        (significant_correlations['Correlation'] > 0.4) | 
+        (significant_correlations['Correlation'] < -0.5)
+    ]
+    strong_correlations = strong_correlations[strong_correlations['Skill 1'] != strong_correlations['Skill 2']]  # Exclude self-correlations
+
+    # Remove duplicate pairs by ensuring Skill 1 < Skill 2
+    strong_correlations = strong_correlations[
+        strong_correlations['Skill 1'] < strong_correlations['Skill 2']
+    ]
+
+    # Display strong correlations
+    if not strong_correlations.empty:
+        for _, row in strong_correlations.iterrows():
+            st.write(f"🔗 **{row['Skill 1']}** and **{row['Skill 2']}** have a correlation of **{row['Correlation']:.2f}**")
+    else:
+        st.write("🚫 No strong correlations found among the top skills.")
+else:      
+    st.write("❌ Data is not available for correlation analysis.")
 
 
     
-# Displaying all the results in a structured manner
-st.write("### Summary")
-st.write(f"The top demanded skills across all job categories have been displayed above. You can filter by job category to see the top skills required for that specific category.")
+
+
+
+
+    
