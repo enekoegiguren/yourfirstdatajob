@@ -6,12 +6,25 @@ from dotenv import load_dotenv
 import os
 import re
 import plotly.express as px
+from PIL import Image
 
-# Set page config for full-width layout
-st.set_page_config(page_title="Data stack", layout="wide")
+
+st.title("""
+        :blue[yourfirstdatajob]
+        """)
+
+st.markdown("---")
 
 # Load environment variables from .env
 load_dotenv('../.env')
+
+current_dir = os.path.dirname(__file__)
+image_path = os.path.join(current_dir, 'logo.png')
+image_logo = Image.open(image_path)
+
+st.sidebar.image(image_logo)
+
+
 AWS_ACCESS_KEY = os.getenv('AWS_ACCESS_KEY')
 AWS_SECRET_KEY = os.getenv('AWS_SECRET_KEY')
 BUCKET_NAME = os.getenv('BUCKET_NAME')
@@ -60,7 +73,9 @@ for col in skills_columns:
 
 # Streamlit App Layout
 st.title("Your profile analysis")
-st.write("### Which profile are you❓")
+st.write("## Which profile are you ❓")
+st.markdown("---")
+
 
 if not data.empty:
     skill_counts = data[skills_columns].sum().sort_values(ascending=False)

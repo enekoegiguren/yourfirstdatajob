@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 import os
 import re
 import seaborn as sns
+
+from PIL import Image
 import plotly.express as px
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
@@ -15,6 +17,12 @@ st.set_page_config(page_title="Data stack", layout="wide")
 
 # Load environment variables from .env
 load_dotenv('../.env')
+current_dir = os.path.dirname(__file__)
+image_path = os.path.join(current_dir, 'logo.png')
+image_logo = Image.open(image_path)
+
+st.sidebar.image(image_logo)
+
 AWS_ACCESS_KEY = os.getenv('AWS_ACCESS_KEY')
 AWS_SECRET_KEY = os.getenv('AWS_SECRET_KEY')
 BUCKET_NAME = os.getenv('BUCKET_NAME')
@@ -61,36 +69,46 @@ skills_columns = [
 for col in skills_columns:
     data[col] = data[col].apply(lambda x: 1 if x == 'Y' else 0)
 
+#with col2:
+st.title("""
+        :blue[yourfirstdatajob]
+        """)
+
+st.markdown("---")
 
 # Streamlit App Layout
 st.title("Data stack")
-st.write("### Analyzing job listings to identify trends and correlations.")
+st.write("## Top Demanded Skills: SQL, Python, Cloud .. ❓")
 
-# 1. Most Demanded Skills
-st.write("## Top Demanded Skills")
+
+st.markdown("---")
 
 if not data.empty:
     rows_with_skill = data[skills_columns].any(axis=1).sum()
     perc_rows_with_skill = rows_with_skill / len(data) *100
-    
-    st.metric(label="% Job with skills demanded", value=f"{perc_rows_with_skill:.1f}%")
-    
+
     
     # filtered_data = data[data[skills_columns].any(axis=1)]  # Filter rows with at least one skill = 1
     skill_counts = data[skills_columns].sum().sort_values(ascending=False)
     #Insights
-    st.write("### 📊 Insights")
+    if perc_rows_with_skill is not None:
+        st.header(f" 📊 Insights: :blue[ Job % with skills demanded: {perc_rows_with_skill:.1f}%]")
+    
+
+    
     
     top_skills = skill_counts.head(3).index.tolist() if not skill_counts.empty else []
     
     # Display insights for the top three demanded skills
     if top_skills:
-        st.write("🔍 **Top 3 demanded skills:**")
+        st.subheader("🔍 **Top 3 demanded skills:**")
         # Slice the list to get the top 3 skills
         for i, skill in enumerate(top_skills[:3], 1):  # Use slicing to get the first 3 elements
             # Calculate percentage of jobs requiring each top skill
             perc_jobs_with_skill = (data[skill].sum() / len(data)) * 100
-            st.write(f"   {i}. **{skill.capitalize()}**: {perc_jobs_with_skill:.1f}% jobs require this skill")
+            st.subheader(f"   {i}. **{skill.capitalize()}**: :blue[{perc_jobs_with_skill:.1f}%]")
+
+    st.markdown("---")
 
     # Option to select number of top skills to display
     top_n_options = st.selectbox("Select number of top skills to display:", options=["Top 10", "Top 20", "Top 30", "All"])
@@ -128,6 +146,7 @@ if not data.empty:
 else:
     st.write("No data available for the selected filters.")
 
+st.markdown("---")
 if not data.empty:
     # Filter for job category with default selection set to "Data Engineer"
     job_categories = data['job_category'].unique()
@@ -166,7 +185,8 @@ if not data.empty:
 
 else:      
     st.write("Job category data is not available for analysis.")
-
+    
+st.markdown("---")
 # Temporal Evolution of Skills
 st.write("## Temporal Evolution of Skills")
 
@@ -221,6 +241,7 @@ if not data.empty and 'date_creation' in data.columns:
 else:
     st.write("No data available for temporal evolution analysis.")
 
+st.markdown("---")
 
 # Correlation with Top Skills
 st.write("## Correlation Between Top Skills")

@@ -4,6 +4,8 @@ import pandas as pd
 import plotly.express as px
 from io import BytesIO
 from dotenv import load_dotenv
+
+from PIL import Image
 import os
 import re
 
@@ -12,6 +14,12 @@ st.set_page_config(page_title="Job Opportunities Analysis", layout="wide")
 
 # Load environment variables from .env
 load_dotenv('../.env')
+current_dir = os.path.dirname(__file__)
+image_path = os.path.join(current_dir, 'logo.png')
+image_logo = Image.open(image_path)
+
+st.sidebar.image(image_logo)
+
 
 # Access the environment variables
 AWS_ACCESS_KEY = os.getenv('AWS_ACCESS_KEY')
@@ -55,14 +63,29 @@ data = data[data['experience'].notnull()]
 data['experience'] = data['experience'].astype(int) 
 data = data[data['experience'] > 0]
 
+#with col2:
+st.title("""
+        :blue[yourfirstdatajob]
+        """)
+
+st.markdown("---")
+
 # ---- Analysis Page Content ----
-st.title("Job Opportunities Analysis - Statistics")
+st.title("Statistics")
+
+st.write("## Experience and salary by job .. ❓ ")
+
+st.markdown("---")
+
 
 # ---- Experience Analysis ----
 st.write("## Experience by Job")
 data['experience_rounded'] = data['experience'].round().astype(int)  # Round experience for cleaner visuals
 
+
 if not data.empty:
+    average_experience = data['experience'].mean() if not data['experience'].isnull().all() else None
+    st.write(f"### The :blue[average experience] needed: :blue[{average_experience:.1f} years]")
     # Create box plot
     fig_exp_box = px.box(
         data,
@@ -84,19 +107,26 @@ if not data.empty:
     # Insights for experience
     most_experience_job = exp_summary.loc['Average Experience'].idxmax()
     least_experience_job = exp_summary.loc['Average Experience'].idxmin()
-    st.write("📊 **Insights:**")
-    st.write(f"The job with the most years of experience required is **{most_experience_job}**.")
-    st.write(f"The job with the least years of experience required is **{least_experience_job}**.")
+    
+    st.subheader(f"The job with the: ")
+    
+    st.subheader(f"⬆️ :blue[most years of experience] required is :blue[**{most_experience_job}**].")
+    st.subheader(f"⬇️ :blue[least years of experience] required is :blue[**{least_experience_job}**].")
     st.table(exp_summary)
 
 
+
+st.markdown("---")
 data = data[data['max_salary'] < 200000]
 # ---- Salary Analysis by Job ----
+
 
 st.write("## Salary by Job")
 data['avg_salary_rounded'] = data['avg_salary'].round()  # Round average salary
 
 if not data.empty:
+    avg_salary = data['avg_salary'].mean() if not data['avg_salary'].isnull().all() else None
+    st.write(f"### 💰 **Average salary:** :blue[{format_salary(avg_salary)}]")
     # Create box plot
     fig_salary_job_box = px.box(
         data,
@@ -117,11 +147,14 @@ if not data.empty:
     # Insights for salary
     highest_salary_job = salary_summary.loc['Average Salary (€)'].idxmax()
     lowest_salary_job = salary_summary.loc['Average Salary (€)'].idxmin()
-    st.write("💼 **Insights:**")
-    st.write(f"The job with the highest average salary is **{highest_salary_job}**.")
-    st.write(f"The job with the lowest average salary is **{lowest_salary_job}**.")
+    st.subheader(f"The job with the: ")
+    st.subheader(f"⬆️ :blue[highest average salary] is :blue[**{highest_salary_job}**].")
+    st.subheader(f"⬇️ :blue[lowest average salary] is :blue[**{lowest_salary_job}**].")
     st.table(salary_summary)
 
+
+
+st.markdown("---")
 # ---- Salary Analysis by Years of Experience ----
 st.write("## Salary by Years of Experience")
 if not data.empty:
