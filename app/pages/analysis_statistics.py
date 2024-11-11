@@ -56,6 +56,51 @@ def load_data():
 def format_salary(value):
     return f"{value / 1000:.0f}k €"
 
+st.markdown(
+    """
+    <style>
+    .rect-metric {
+        padding: 20px;
+        margin: 10px;
+        border-radius: 8px;
+        background-color: #f3f3f3;
+        text-align: center;
+        box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
+        font-size: 18px;
+        font-weight: bold;
+    }
+    .rect-metric-title {
+        font-size: 24px;
+        margin-bottom: 5px;
+        color: #333;
+    }
+    .rect-metric-value {
+        font-size: 32px;
+        color: #007bff;
+    }
+    .rect-metric-delta {
+        font-size: 18px;
+        margin-top: 5px;
+        color: #28a745;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+def display_big_metric(title, value, delta=None):
+    delta_html = f"<div class='rect-metric-delta'>{delta}</div>" if delta else ""
+    st.markdown(
+        f"""
+        <div class='rect-metric'>
+            <div class='rect-metric-title'>{title}</div>
+            <div class='rect-metric-value'>{value}</div>
+            {delta_html}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
 # Fetch data
 data = load_data()
 
@@ -84,8 +129,6 @@ data['experience_rounded'] = data['experience'].round().astype(int)  # Round exp
 
 
 if not data.empty:
-    average_experience = data['experience'].mean() if not data['experience'].isnull().all() else None
-    st.write(f"### The :blue[average experience] needed: :blue[{average_experience:.1f} years]")
     # Create box plot
     fig_exp_box = px.box(
         data,
@@ -107,11 +150,17 @@ if not data.empty:
     # Insights for experience
     most_experience_job = exp_summary.loc['Average Experience'].idxmax()
     least_experience_job = exp_summary.loc['Average Experience'].idxmin()
-    
-    st.subheader(f"The job with the: ")
-    
-    st.subheader(f"⬆️ :blue[most years of experience] required is :blue[**{most_experience_job}**].")
-    st.subheader(f"⬇️ :blue[least years of experience] required is :blue[**{least_experience_job}**].")
+    average_experience = data['experience'].mean() if not data['experience'].isnull().all() else None
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        display_big_metric("Average experience needed:", f"{average_experience:.1f} years")
+    with col2:
+        display_big_metric("⬆️ Most experience needed for:", f"{most_experience_job}")
+    with col3:
+        display_big_metric("⬆️ Least experience needed for:", f"{least_experience_job}")
+
+    st.write(" ")
+
     st.table(exp_summary)
 
 
@@ -125,8 +174,6 @@ st.write("## Salary by Job")
 data['avg_salary_rounded'] = data['avg_salary'].round()  # Round average salary
 
 if not data.empty:
-    avg_salary = data['avg_salary'].mean() if not data['avg_salary'].isnull().all() else None
-    st.write(f"### 💰 **Average salary:** :blue[{format_salary(avg_salary)}]")
     # Create box plot
     fig_salary_job_box = px.box(
         data,
@@ -147,11 +194,19 @@ if not data.empty:
     # Insights for salary
     highest_salary_job = salary_summary.loc['Average Salary (€)'].idxmax()
     lowest_salary_job = salary_summary.loc['Average Salary (€)'].idxmin()
-    st.subheader(f"The job with the: ")
-    st.subheader(f"⬆️ :blue[highest average salary] is :blue[**{highest_salary_job}**].")
-    st.subheader(f"⬇️ :blue[lowest average salary] is :blue[**{lowest_salary_job}**].")
-    st.table(salary_summary)
+    avg_salary = data['avg_salary'].mean() if not data['avg_salary'].isnull().all() else None
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        display_big_metric("Average salary:", format_salary(avg_salary))
+    with col2:
+        display_big_metric("⬆️ Highest salary for:", f"{highest_salary_job}")
+    with col3:
+        display_big_metric("⬆️ Lowest salary for:", f"{lowest_salary_job}")
 
+    st.write(" ")
+
+    st.table(salary_summary)
 
 
 st.markdown("---")
@@ -174,5 +229,4 @@ if not data.empty:
     exp_salary_summary.columns = ['Years of Experience', 'Average Salary (€)']
     exp_salary_summary['Average Salary (€)'] = exp_salary_summary['Average Salary (€)'].apply(lambda x: f"{int(x):,}")  # Format salary
     exp_salary_summary = exp_salary_summary.set_index('Years of Experience').T  # Transpose the summary
-    st.write("📈 **Average Salary by Years of Experience:**")
     st.table(exp_salary_summary)

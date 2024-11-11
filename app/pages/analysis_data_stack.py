@@ -50,6 +50,52 @@ def load_data():
     data = pd.read_parquet(BytesIO(obj['Body'].read()))
     return data
 
+st.markdown(
+    """
+    <style>
+    .rect-metric {
+        padding: 20px;
+        margin: 10px;
+        border-radius: 8px;
+        background-color: #f3f3f3;
+        text-align: center;
+        box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
+        font-size: 18px;
+        font-weight: bold;
+    }
+    .rect-metric-title {
+        font-size: 24px;
+        margin-bottom: 5px;
+        color: #333;
+    }
+    .rect-metric-value {
+        font-size: 32px;
+        color: #007bff;
+    }
+    .rect-metric-delta {
+        font-size: 18px;
+        margin-top: 5px;
+        color: #28a745;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+def display_big_metric(title, value, delta=None):
+    delta_html = f"<div class='rect-metric-delta'>{delta}</div>" if delta else ""
+    st.markdown(
+        f"""
+        <div class='rect-metric'>
+            <div class='rect-metric-title'>{title}</div>
+            <div class='rect-metric-value'>{value}</div>
+            {delta_html}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
 # Fetch data
 data = load_data()
 
@@ -90,23 +136,32 @@ if not data.empty:
     
     # filtered_data = data[data[skills_columns].any(axis=1)]  # Filter rows with at least one skill = 1
     skill_counts = data[skills_columns].sum().sort_values(ascending=False)
+    
+    top_skills = skill_counts.head(3).index.tolist() if not skill_counts.empty else []
+    top_skill_1 = top_skills[0] if len(top_skills) > 0 else None
+    top_skill_2 = top_skills[1] if len(top_skills) > 1 else None
+    top_skill_3 = top_skills[2] if len(top_skills) > 2 else None
+    perc_jobs_with_skill_1 = (data[top_skill_1].sum() / len(data)) * 100
+    perc_jobs_with_skill_2 = (data[top_skill_2].sum() / len(data)) * 100
+    perc_jobs_with_skill_3 = (data[top_skill_3].sum() / len(data)) * 100
+    
     #Insights
     if perc_rows_with_skill is not None:
-        st.header(f" 📊 Insights: :blue[ Job % with skills demanded: {perc_rows_with_skill:.1f}%]")
+        col1, col2, col3, col4 = st.columns(4)
+    
+        with col1:
+            display_big_metric("Job % with skills demanded", f"{perc_rows_with_skill:.1f}")
+        with col2:
+            display_big_metric("Most demanded skill", f"{top_skill_1}: {perc_jobs_with_skill_1:.0f}%")
+        with col3:
+             display_big_metric("Second skill", f"{top_skill_2}: {perc_jobs_with_skill_2:.0f}%")
+        with col4:
+             display_big_metric("Third skill", f"{top_skill_3}: {perc_jobs_with_skill_3:.0f}%")
+           # st.header(f" 📊 Insights: :blue[ Job % with skills demanded: {perc_rows_with_skill:.1f}%]")
     
 
     
-    
-    top_skills = skill_counts.head(3).index.tolist() if not skill_counts.empty else []
-    
-    # Display insights for the top three demanded skills
-    if top_skills:
-        st.subheader("🔍 **Top 3 demanded skills:**")
-        # Slice the list to get the top 3 skills
-        for i, skill in enumerate(top_skills[:3], 1):  # Use slicing to get the first 3 elements
-            # Calculate percentage of jobs requiring each top skill
-            perc_jobs_with_skill = (data[skill].sum() / len(data)) * 100
-            st.subheader(f"   {i}. **{skill.capitalize()}**: :blue[{perc_jobs_with_skill:.1f}%]")
+
 
     st.markdown("---")
 
@@ -137,7 +192,7 @@ if not data.empty:
     fig.update_layout(
         xaxis_title="Skills",
         yaxis_title="Percentage",
-        title=f"{top_n_options} Most Demanded Skills",
+        title=f"{top_n_options} most demanded skills",
         template="plotly_white"
     )
 
@@ -151,8 +206,8 @@ if not data.empty:
     # Filter for job category with default selection set to "Data Engineer"
     job_categories = data['job_category'].unique()
     default_category = "Data Engineer" if "Data Engineer" in job_categories else job_categories[0]
-    st.write("## Top 10 Skills Depending on the Job Category")
-    selected_category = st.selectbox("Select Job Category", options=job_categories, index=list(job_categories).index(default_category))
+    st.write("## Top 10 skills depending on the job category")
+    selected_category = st.selectbox("Select job category", options=job_categories, index=list(job_categories).index(default_category))
 
     if 'job_category' in data.columns:
         # Filter data based on the selected job category
@@ -178,7 +233,7 @@ if not data.empty:
         fig.update_layout(
             xaxis_title="Most Demanded Skills",
             yaxis_title="Percentage",
-            title=f"Top 10 Most Demanded Skills for {selected_category}",
+            title=f"Top 10 most demanded skills for {selected_category}",
             template="plotly_white"
         )
         st.plotly_chart(fig)
@@ -188,7 +243,7 @@ else:
     
 st.markdown("---")
 # Temporal Evolution of Skills
-st.write("## Temporal Evolution of Skills")
+st.write("## Temporal evolution of skills")
 
 if not data.empty and 'date_creation' in data.columns:
     # Convert 'date_creation' to datetime format if it's not already
@@ -211,7 +266,7 @@ if not data.empty and 'date_creation' in data.columns:
 
     # Multi-select for skills, allowing selection of all skills
     selected_skills = st.multiselect(
-        'Select Skills to Display:',
+        'Select skills to display:',
         options=all_skills,
         default=top_10_skills  # Default to all top 10 skills selected
     )
@@ -230,7 +285,7 @@ if not data.empty and 'date_creation' in data.columns:
             x='date_creation',
             y='Count',
             color='Skill',
-            title='Temporal Evolution of Selected Skills (Monthly)',
+            #title='Temporal evolution of Selected Skills (Monthly)',
             labels={'date_creation': 'Month', 'Count': 'Number of Listings'},
             line_shape='linear'
         )
@@ -244,7 +299,7 @@ else:
 st.markdown("---")
 
 # Correlation with Top Skills
-st.write("## Correlation Between Top Skills")
+st.write("## Correlation between top skills")
 
 if not data.empty:
     # Get the top 20 skills

@@ -52,6 +52,53 @@ def load_data():
     data = pd.read_parquet(BytesIO(obj['Body'].read()))
     return data
 
+
+st.markdown(
+    """
+    <style>
+    .rect-metric {
+        padding: 20px;
+        margin: 10px;
+        border-radius: 8px;
+        background-color: #f3f3f3;
+        text-align: center;
+        box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
+        font-size: 18px;
+        font-weight: bold;
+    }
+    .rect-metric-title {
+        font-size: 24px;
+        margin-bottom: 5px;
+        color: #333;
+    }
+    .rect-metric-value {
+        font-size: 32px;
+        color: #007bff;
+    }
+    .rect-metric-delta {
+        font-size: 18px;
+        margin-top: 5px;
+        color: #28a745;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+def display_big_metric(title, value, delta=None):
+    delta_html = f"<div class='rect-metric-delta'>{delta}</div>" if delta else ""
+    st.markdown(
+        f"""
+        <div class='rect-metric'>
+            <div class='rect-metric-title'>{title}</div>
+            <div class='rect-metric-value'>{value}</div>
+            {delta_html}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    
 # Fetch data
 data = load_data()
 
@@ -83,7 +130,7 @@ if not data.empty:
     top_10_skills = skill_counts.head(5).index
 
 # Skill Ranking for Jobs
-st.write("## Job Ranking by Selected Skill")
+st.write("## Job definition by selected skills")
 
 all_skills = skills_columns 
 
@@ -105,7 +152,6 @@ if selected_skill:
     proficiency = skill_counts[selected_skill] / len(data) * 100 if len(data) > 0 else 0
     
 
-# Filter data for the selected skills
 if selected_skills_for_ranking:
     # Create a boolean mask for any of the selected skills being present
     mask = data[selected_skills_for_ranking].any(axis=1)  # Ensure there's at least one skill (1)
@@ -120,25 +166,39 @@ if selected_skills_for_ranking:
     # Sort by Count
     job_counts = job_counts.sort_values(by='Count', ascending=False)
 
+    # Calculate the percentage of each job category
+    total_jobs = job_counts['Count'].sum()  # Total number of jobs
+    job_counts['Percentage'] = (job_counts['Count'] / total_jobs) * 100  # Calculate percentage
+
     # Display the top job category
     if not job_counts.empty:
         top_job_category = job_counts.iloc[0]
         
-        st.write("### 📊 Insights")
-        
         # Show proficiency for the top job category
         proficiency_top_category = (jobs_with_skills['job_category'] == top_job_category['Job Category']).mean() * 100
-        st.write(f"#### You have a {proficiency_top_category:.2f}% match for the role: {top_job_category['Job Category']}")
-
-    # Visualize the job counts
+        col1, col2 = st.columns(2)
+        with col1:
+            display_big_metric(f"Matched role:", f"{top_job_category['Job Category']}")
+        with col2:
+            display_big_metric(f"Match %:", f"{proficiency_top_category:.2f}%")
+    # Visualize the job counts as percentages
     fig_job_ranking = px.bar(
         job_counts,
         x='Job Category',
-        y='Count',
-        title='Job Counts for Selected Skills: {}'.format(', '.join(selected_skills_for_ranking)),
-        labels={'Job Category': 'Job Category', 'Count': 'Number of Listings'},
-        color='Count'
+        y='Percentage',  # Use percentage for the y-axis
+        labels={'Job Category': 'Job Category', 'Percentage': 'Percentage of Listings (%)'},  # Update label for percentage
+        color='Percentage',  # Color the bars based on the percentage
+        text='Percentage'  # Add percentage text on top of each bar
+    )
+
+    # Customize layout to improve visibility of the text on bars
+    fig_job_ranking.update_traces(texttemplate='%{text:.2f}%', textposition='outside')
+    
+    # Increase the height of the figure
+    fig_job_ranking.update_layout(
+        height=600  # Set the height to a larger value (adjust this as needed)
     )
 
     st.plotly_chart(fig_job_ranking)
+
 
