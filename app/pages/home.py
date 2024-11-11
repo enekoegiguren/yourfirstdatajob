@@ -120,8 +120,8 @@ st.title("""
         """)
 
 st.markdown("---")
-st.title("""
-        Land _Your First Data Job_ or Level Up Your Career with :blue[Real Market Data & Insights!]
+st.write(""" 
+        #### Land _Your First Data Job_ or Level Up Your Career with :blue[Real Market Data & Insights!]
         """)
 
 st.markdown("---")

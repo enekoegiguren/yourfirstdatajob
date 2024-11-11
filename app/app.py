@@ -30,12 +30,18 @@ personal = st.Page(
     icon = ":material/home:"
 )
 
+contact = st.Page(
+    page = 'pages/contact.py',
+    title = "Contact me",
+    icon = ":material/home:"
+)
+
 # ---- NAVIGATION SETUP
 pg = st.navigation(
     {
         "": [home_page],
-        "Analysis - Insights": [statistics, Data_stack],
-        "You": [personal]
+        "Analysis - Insights": [statistics, Data_stack, personal],
+        "Contact": [contact]
     }
 )
 
