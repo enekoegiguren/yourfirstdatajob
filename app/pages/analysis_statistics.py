@@ -9,17 +9,13 @@ from PIL import Image
 import os
 import re
 
-# Set page config for full width layout
-st.set_page_config(page_title="Job Opportunities Analysis", layout="wide")
+
 
 # Load environment variables from .env
 load_dotenv('../.env')
 current_dir = os.path.dirname(__file__)
 image_path = os.path.join(current_dir, 'logo.png')
 image_logo = Image.open(image_path)
-
-st.sidebar.image(image_logo)
-
 
 # Access the environment variables
 AWS_ACCESS_KEY = os.getenv('AWS_ACCESS_KEY')
@@ -55,6 +51,15 @@ def load_data():
 # Format salary as € in thousands (k)
 def format_salary(value):
     return f"{value / 1000:.0f}k €"
+
+
+data = load_data()
+max_extracted_date = data['extracted_date'].max()
+
+st.set_page_config(page_title="YourFirstDataJob", page_icon="🎯",layout="wide")
+st.sidebar.image(image_logo)
+st.sidebar.markdown(f"### Last actualization: {max_extracted_date}")
+st.sidebar.markdown("Created by [Eneko Eguiguren](https://www.linkedin.com/in/enekoegiguren/)")
 
 st.markdown(
     """
@@ -157,7 +162,7 @@ if not data.empty:
     with col2:
         display_big_metric("⬆️ Most experience needed for:", f"{most_experience_job}")
     with col3:
-        display_big_metric("⬆️ Least experience needed for:", f"{least_experience_job}")
+        display_big_metric("⬇️ Least experience needed for:", f"{least_experience_job}")
 
     st.write(" ")
 
@@ -202,7 +207,7 @@ if not data.empty:
     with col2:
         display_big_metric("⬆️ Highest salary for:", f"{highest_salary_job}")
     with col3:
-        display_big_metric("⬆️ Lowest salary for:", f"{lowest_salary_job}")
+        display_big_metric("⬇️ Lowest salary for:", f"{lowest_salary_job}")
 
     st.write(" ")
 

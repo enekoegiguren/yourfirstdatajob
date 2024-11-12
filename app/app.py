@@ -23,6 +23,13 @@ Data_stack = st.Page(
     icon = ":material/home:"
 )
 
+cloud = st.Page(
+    page = 'pages/cloud.py',
+    title = "Cloud",
+    icon = ":material/home:"
+)
+
+
 
 personal = st.Page(
     page = 'pages/personal.py',
@@ -40,7 +47,7 @@ contact = st.Page(
 pg = st.navigation(
     {
         "": [home_page],
-        "Analysis - Insights": [statistics, Data_stack, personal],
+        "Analysis - Insights": [statistics, Data_stack, cloud, personal],
         "Contact": [contact]
     }
 )

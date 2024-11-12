@@ -9,20 +9,12 @@ import plotly.express as px
 from PIL import Image
 
 
-st.title("""
-        :blue[yourfirstdatajob]
-        """)
-
-st.markdown("---")
-
 # Load environment variables from .env
 load_dotenv('../.env')
 
 current_dir = os.path.dirname(__file__)
 image_path = os.path.join(current_dir, 'logo.png')
 image_logo = Image.open(image_path)
-
-st.sidebar.image(image_logo)
 
 
 AWS_ACCESS_KEY = os.getenv('AWS_ACCESS_KEY')
@@ -51,6 +43,26 @@ def load_data():
     obj = s3_client.get_object(Bucket=BUCKET_NAME, Key=latest_file_key)
     data = pd.read_parquet(BytesIO(obj['Body'].read()))
     return data
+
+data = load_data()
+max_extracted_date = data['extracted_date'].max()
+
+st.set_page_config(page_title="YourFirstDataJob", page_icon="🎯",layout="wide")
+st.sidebar.image(image_logo)
+st.sidebar.markdown(f"### Last actualization: {max_extracted_date}")
+st.sidebar.markdown("Created by [Eneko Eguiguren](https://www.linkedin.com/in/enekoegiguren/)")
+
+st.title("""
+        :blue[yourfirstdatajob]
+        """)
+
+
+
+st.markdown("---")
+
+
+
+
 
 
 st.markdown(
