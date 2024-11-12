@@ -14,19 +14,19 @@ home_page = st.Page(
 statistics = st.Page(
     page = 'pages/analysis_statistics.py',
     title = "Statistics",
-    icon = ":material/home:"
+    icon = ":material/analytics:"
 )
 
 Data_stack = st.Page(
     page = 'pages/analysis_data_stack.py',
     title = "Data stack",
-    icon = ":material/home:"
+    icon = ":material/home_repair_service:"
 )
 
 cloud = st.Page(
     page = 'pages/cloud.py',
     title = "Cloud",
-    icon = ":material/home:"
+    icon = ":material/cloud:"
 )
 
 
@@ -34,13 +34,13 @@ cloud = st.Page(
 personal = st.Page(
     page = 'pages/personal.py',
     title = "Your profile analysis",
-    icon = ":material/home:"
+    icon = ":material/person:"
 )
 
 contact = st.Page(
     page = 'pages/contact.py',
     title = "Contact me",
-    icon = ":material/home:"
+    icon = ":material/on_device_training:"
 )
 
 # ---- NAVIGATION SETUP
