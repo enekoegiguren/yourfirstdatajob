@@ -57,6 +57,7 @@ def format_salary(value):
 
 
 data = load_data()
+data = data[(data['year'] > 2023) & (data['month'] > 5)]
 max_extracted_date = data['extracted_date'].max()
 
 st.set_page_config(page_title="YourFirstDataJob", page_icon="🎯",layout="wide")
@@ -148,7 +149,7 @@ if not data.empty:
     experience_data = data[data['experience'] > 0]
     average_experience = experience_data['experience'].mean() if not experience_data['experience'].isnull().all() else None
     
-    salary_data = data[data['avg_salary'] > 0]
+    salary_data = data[(data['avg_salary'] > 0) & (data['avg_salary']< 300000)]
     avg_salary = salary_data['avg_salary'].mean() if not salary_data['avg_salary'].isnull().all() else None
     
     contract_counts = data['contract_type'].value_counts()
@@ -228,15 +229,18 @@ with col2:
 with col3:
     months = data['month'].unique().tolist()
     selected_month = st.selectbox("Select Month", options=["All"] + months)
-    
+
+
 with col4:
     # Add salary filter using slider
+    max_salary_data = data[data['avg_salary'] < 300000]
+    max_salary = int(max_salary_data['avg_salary'].max())
     salary_range = st.slider(
         "Select Salary Range (€)", 
         min_value=0, 
-        max_value=300000, 
-        value=(0, 300000), 
-        step=1000,
+        max_value=max_salary, 
+        value=(0, max_salary), 
+        step=5000,
         format="€%d"
     )
 # Apply filters to data
@@ -250,8 +254,11 @@ if selected_year != "All":
 if selected_month != "All":
     filtered_data = filtered_data[filtered_data['month'] == selected_month]
     
-# Apply salary filter based on the selected range
-if salary_range != (0, 300000):
+
+
+
+# Apply filtering based on the dynamic max_salary
+if salary_range != (0, max_salary):
     filtered_data = filtered_data[
         (filtered_data['avg_salary'] >= salary_range[0]) & 
         (filtered_data['avg_salary'] <= salary_range[1])
@@ -273,7 +280,8 @@ else:
     top_contract_percentage = (contract_counts.max() / total_contracts) * 100 if total_contracts > 0 else 0
 
     # Salary calculation
-    filtered_data_salary = filtered_data[filtered_data['avg_salary'] <= 300000]
+    filtered_data_salary = filtered_data[(filtered_data['avg_salary'] < 300000) & (filtered_data['avg_salary'] > 0)]
+   # filtered_data_salary = filtered_data[(filtered_data['avg_salary'] > 0)]
     min_salary = filtered_data_salary['avg_salary'].min() if not filtered_data_salary['avg_salary'].isnull().all() else 0
     max_salary = filtered_data_salary['avg_salary'].max() if not filtered_data_salary['avg_salary'].isnull().all() else 0
     average_salary = filtered_data_salary['avg_salary'].mean() if not filtered_data_salary['avg_salary'].isnull().all() else 0
@@ -373,11 +381,11 @@ st.markdown("---")
 # ---- Most Demanded Job Categories Section ----
 st.write("### Top company fields demanding data jobs")
 
-if not data.empty:
+if not filtered_data.empty:
 
     # Calculate the percentage for each category
     most_demanded_company_fields = (
-        data['company_field']
+        filtered_data['company_field']
         .value_counts()
         .sort_values(ascending=False)
         .head(10)
@@ -385,7 +393,8 @@ if not data.empty:
 
 
     # Calculate the percentage for each category
-    total_jobs = most_demanded_jobs.sum()  # Total number of jobs
+    #total_jobs = most_demanded_jobs.sum()  # Total number of jobs
+    total_jobs = len(filtered_data)
     most_demanded_company_field_percentage = (most_demanded_company_fields / total_jobs) * 100
     most_demanded_company_field_percentage = most_demanded_company_field_percentage.sort_values(ascending=True)
 

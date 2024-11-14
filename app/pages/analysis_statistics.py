@@ -109,9 +109,10 @@ def display_big_metric(title, value, delta=None):
 # Fetch data
 data = load_data()
 
-data = data[data['experience'].notnull()]
-data['experience'] = data['experience'].astype(int) 
-data = data[data['experience'] > 0]
+data_experience = data[data['experience'].notnull()]
+data_experience['experience'] = data_experience['experience'].astype(int) 
+data_experience= data_experience[data_experience['experience'] > 0]
+
 
 #with col2:
 st.title("""
@@ -130,13 +131,14 @@ st.markdown("---")
 
 # ---- Experience Analysis ----
 st.write("## Experience by Job")
-data['experience_rounded'] = data['experience'].round().astype(int)  # Round experience for cleaner visuals
+data_experience['experience_rounded'] = data_experience['experience'].round().astype(int)  # Round experience for cleaner visuals
+data_experience = data_experience[(data_experience['max_salary'] < 300000)&(data_experience['max_salary'] > 0)]
+data_experience['avg_salary_rounded'] = data_experience['avg_salary'].round()  # Round average salary
 
-
-if not data.empty:
+if not data_experience.empty:
     # Create box plot
     fig_exp_box = px.box(
-        data,
+        data_experience,
         x='job_category',
         y='experience_rounded',
         points=False,  # Disable outlier points
@@ -146,7 +148,7 @@ if not data.empty:
     st.plotly_chart(fig_exp_box)
 
     # Summary table for experience (transposed, only average)
-    exp_summary = data.groupby('job_category')['experience_rounded'].mean().reset_index()
+    exp_summary = data_experience.groupby('job_category')['experience_rounded'].mean().reset_index()
     exp_summary.columns = ['Job Category', 'Average Experience']
     exp_summary['Average Experience'] = exp_summary['Average Experience'].astype(int)  # Convert to int for display
     exp_summary = exp_summary.set_index('Job Category').T  # Transpose the summary
@@ -155,7 +157,7 @@ if not data.empty:
     # Insights for experience
     most_experience_job = exp_summary.loc['Average Experience'].idxmax()
     least_experience_job = exp_summary.loc['Average Experience'].idxmin()
-    average_experience = data['experience'].mean() if not data['experience'].isnull().all() else None
+    average_experience = data_experience['experience'].mean() if not data_experience['experience'].isnull().all() else None
     col1, col2, col3 = st.columns(3)
     with col1:
         display_big_metric("Average experience needed:", f"{average_experience:.1f} years")
@@ -171,7 +173,7 @@ if not data.empty:
 
 
 st.markdown("---")
-data = data[data['max_salary'] < 200000]
+data = data[(data['max_salary'] < 300000)&(data['max_salary'] > 0)]
 # ---- Salary Analysis by Job ----
 
 
@@ -217,10 +219,11 @@ if not data.empty:
 st.markdown("---")
 # ---- Salary Analysis by Years of Experience ----
 st.write("## Salary by Years of Experience")
-if not data.empty:
+
+if not data_experience.empty:
     # Create box plot
     fig_salary_exp = px.box(
-        data,
+        data_experience,
         x='experience_rounded',
         y='avg_salary_rounded',
         points=False,
@@ -230,7 +233,7 @@ if not data.empty:
     st.plotly_chart(fig_salary_exp)
 
     # Summary table for salary by years of experience (transposed, only average)
-    exp_salary_summary = data.groupby('experience_rounded')['avg_salary_rounded'].mean().reset_index()
+    exp_salary_summary = data_experience.groupby('experience_rounded')['avg_salary_rounded'].mean().reset_index()
     exp_salary_summary.columns = ['Years of Experience', 'Average Salary (€)']
     exp_salary_summary['Average Salary (€)'] = exp_salary_summary['Average Salary (€)'].apply(lambda x: f"{int(x):,}")  # Format salary
     exp_salary_summary = exp_salary_summary.set_index('Years of Experience').T  # Transpose the summary

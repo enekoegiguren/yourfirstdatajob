@@ -156,7 +156,7 @@ if not data.empty:
         col1, col2, col3, col4 = st.columns(4)
     
         with col1:
-            display_big_metric("Job % with skills demanded", f"{perc_rows_with_skill:.1f}")
+            display_big_metric("Job % with skills demanded", f"{perc_rows_with_skill:.0f}%")
         with col2:
             display_big_metric("Most demanded skill", f"{top_skill_1}: {perc_jobs_with_skill_1:.0f}%")
         with col3:
