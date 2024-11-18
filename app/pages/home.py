@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 import os
 import re
 from PIL import Image
-
+from datetime import datetime
 
 # Load environment variables from .env
 load_dotenv('../.env')
@@ -58,6 +58,8 @@ def format_salary(value):
 
 data = load_data()
 data = data[(data['year'] > 2023) & (data['month'] > 5)]
+
+
 max_extracted_date = data['extracted_date'].max()
 
 st.set_page_config(page_title="YourFirstDataJob", page_icon="🎯",layout="wide")
@@ -167,6 +169,23 @@ if not data.empty:
     with col4:
         display_big_metric("Permanent contract", f"{top_contract_percentage:.1f}%")
         
+st.markdown("---")
+# Calculate additional metrics
+total_jobs = len(data)
+jobs_with_salary = len(data[data['avg_salary'].notnull()])
+jobs_with_experience = len(data[data['experience_bool'] != 'N'])
+
+percent_with_salary = (jobs_with_salary / total_jobs) * 100 if total_jobs > 0 else 0
+percent_with_experience = (jobs_with_experience / total_jobs) * 100 if total_jobs > 0 else 0
+
+# Add two new columns below the existing metrics
+col1, col2 = st.columns(2)
+
+with col1:
+    display_big_metric("Jobs with Salary Specified", f"{percent_with_salary:.1f}%")
+
+with col2:
+    display_big_metric("Jobs with Experience Specified", f"{percent_with_experience:.1f}%")
 st.markdown("---")
 
 # ---- Most Demanded Job Categories Section ----
@@ -318,37 +337,47 @@ else:
     # Now we define the columns for the charts
     col1, col2 = st.columns(2)
 
-    with col1:
-        # Job time series data
-        st.write("### Number of jobs over the last month")
-        df = filtered_data.copy()
-        df['date_creation'] = pd.to_datetime(df['date_creation'])
+# Determine the column to use based on the date
+with col1:
+    # Job time series data
+    st.write("### Number of jobs over the last month")
+    df = filtered_data.copy()
+    
+    # Ensure both columns are datetime
+    df['date_creation'] = pd.to_datetime(df['date_creation'])
+    df['extracted_date'] = pd.to_datetime(df['extracted_date'])
 
-        # Filter to show data for the last month
-        one_month_ago = pd.Timestamp.now() - pd.DateOffset(months=1)
-        df_filtered = df[df['date_creation'] >= one_month_ago]
+    # Use the appropriate column for each row
+    df['effective_date'] = df.apply(
+        lambda row: row['date_creation'] if row['extracted_date'] <= pd.Timestamp('2024-11-04') else row['extracted_date'], 
+        axis=1
+    )
 
-        if df_filtered.empty:
-            st.write("No job data available for the last month.")
-        else:
-            job_counts = df_filtered.groupby('date_creation').size().reset_index(name='number_of_jobs')
+    # Filter to show data for the last month
+    one_month_ago = pd.Timestamp.now() - pd.DateOffset(months=1)
+    df_filtered = df[df['effective_date'] >= one_month_ago]
 
-            fig = px.line(
-                job_counts, 
-                x='date_creation', 
-                y='number_of_jobs',
-                labels={'date_creation': 'Date', 'number_of_jobs': 'Number of Jobs'},
-                markers=True
-            )
+    if df_filtered.empty:
+        st.write("No job data available for the last month.")
+    else:
+        job_counts = df_filtered.groupby('effective_date').size().reset_index(name='number_of_jobs')
 
-            fig.update_traces(
-                line=dict(color='blue'),
-                fill='tozeroy',
-                mode='lines+markers'
-            )
-            fig.update_layout(height=700)
+        fig = px.line(
+            job_counts, 
+            x='effective_date', 
+            y='number_of_jobs',
+            labels={'effective_date': 'Date', 'number_of_jobs': 'Number of Jobs'},
+            markers=True
+        )
 
-            st.plotly_chart(fig)
+        fig.update_traces(
+            line=dict(color='blue'),
+            fill='tozeroy',
+            mode='lines+markers'
+        )
+        fig.update_layout(height=700)
+
+        st.plotly_chart(fig)
 
     with col2:
         # ---- Job Locations Map Section ----
