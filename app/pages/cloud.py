@@ -6,15 +6,23 @@ from dotenv import load_dotenv
 import os
 import re
 import plotly.graph_objects as go
+import plotly.express as px
 from PIL import Image
 
 # Load environment variables from .env
 load_dotenv('../.env')
-current_dir = os.path.dirname(__file__)
-image_path = os.path.join(current_dir, 'logo.png')
+app_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+
+
+files_path = os.path.join(app_dir, 'files')
+
+image_path = os.path.join(files_path, 'logo.png')
 image_logo = Image.open(image_path)
 
-
+cloud_path = os.path.join(files_path, 'cloud.png')
+cloud_path_2 = os.path.join(files_path, 'cloud_2.png')
+cloud = Image.open(cloud_path)
+cloud_2 = Image.open(cloud_path_2)
 
 # AWS credentials
 AWS_ACCESS_KEY = os.getenv('AWS_ACCESS_KEY')
@@ -59,29 +67,84 @@ st.sidebar.markdown(f"### Last actualization: {max_extracted_date}")
 st.sidebar.markdown("Created by [Eneko Eguiguren](https://www.linkedin.com/in/enekoegiguren/)")
 
 
+st.markdown(
+    """
+    <style>
+    .rect-metric {
+        padding: 20px;
+        margin: 10px;
+        border-radius: 8px;
+        background-color: #f3f3f3;
+        text-align: center;
+        box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
+        font-size: 18px;
+        font-weight: bold;
+    }
+    .rect-metric-title {
+        font-size: 24px;
+        margin-bottom: 5px;
+        color: #333;
+    }
+    .rect-metric-value {
+        font-size: 32px;
+        color: #007bff;
+    }
+    .rect-metric-delta {
+        font-size: 18px;
+        margin-top: 5px;
+        color: #28a745;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+def display_big_metric(title, value, delta=None):
+    delta_html = f"<div class='rect-metric-delta'>{delta}</div>" if delta else ""
+    st.markdown(
+        f"""
+        <div class='rect-metric'>
+            <div class='rect-metric-title'>{title}</div>
+            <div class='rect-metric-value'>{value}</div>
+            {delta_html}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    
 # Title and Markdown
 st.title(":blue[yourfirstdatajob]")
 st.markdown("---")
 
 # ---- Analysis Page Content ----
-st.title("Cloud platforms")
-
-st.write("## Who is in the lead ❓ ")
-
+col1, col2, col3 = st.columns(3)
+with col2:
+    st.image(cloud, use_column_width=True)
+    st.image(cloud_2, use_column_width=True)
 st.markdown("---")
 
-# Platform Skill Columns
 platform_columns = ['azure', 'aws', 'gcp']
 
-# Convert 'Y'/'N' to binary values (1 for Y, 0 for N)
 for col in platform_columns:
     data[col] = data[col].apply(lambda x: 1 if x == 'Y' else 0)
 
-# Pie chart for platform skill requirements with dynamic coloring
 platform_labels = ['AWS', 'Azure', 'GCP']
 platform_counts = [sum(data['aws']), sum(data['azure']), sum(data['gcp'])]
 
-# Find the platform with the biggest percentage in the pie chart
+cloud_rows = (data[['azure', 'aws', 'gcp']] == 1).any(axis=1)
+cloud_rows_count = cloud_rows.sum()
+
+perc_cloud_providers = cloud_rows_count / len(data) * 100 if len(data) > 0 else 0
+
+display_big_metric("Jobs with cloud provided demanded", f"{perc_cloud_providers:.1f}%")
+
+
+
+
+st.markdown("---")
+
+col1, col2, col3 = st.columns(3)
+
 max_platform_index = platform_counts.index(max(platform_counts))
 platform_colors = ['#1f3a8d' if i == max_platform_index else '#4a90e2' for i in range(3)]  # Highlight the max with the same color
 
@@ -101,9 +164,6 @@ fig.update_layout(
     height=400, 
     margin=dict(t=20, b=20, l=20, r=20) 
 )
-
-# Layout for columns (Pie chart, Salary, Experience)
-col1, col2, col3 = st.columns(3)
 
 with col1:
     st.subheader("The most demanded platform")
@@ -197,3 +257,40 @@ with col3:
         margin=dict(t=30, b=30, l=30, r=30)
     )
     st.plotly_chart(experience_fig)
+
+
+st.markdown("---")
+st.write("## Temporal evolution")
+
+if not data.empty and 'date_creation' in data.columns:
+    data['date_creation'] = pd.to_datetime(data['date_creation'])
+    filtered_data = data[data[platform_columns].any(axis=1)]
+    cloud_over_time = (filtered_data.groupby(pd.Grouper(key='date_creation', freq='W'))[platform_columns]
+                        .sum()
+                        .reset_index())
+    
+    platform_counts = data[platform_columns].sum().sort_values(ascending=False)
+    platform_long = cloud_over_time.melt(id_vars='date_creation', var_name='Cloud platform', value_name='Count')
+
+    all_platforms = platform_columns  
+    top_platforms = platform_counts.head(3).index.tolist()  
+    platform_long_top = platform_long[platform_long['Cloud platform'].isin(top_platforms)]
+    platform_long_top = platform_long_top[platform_long_top['Count'] > 0]
+        
+    if not platform_long_top.empty:
+
+        fig_time_evolution = px.line(
+            platform_long_top,
+            x='date_creation',
+            y='Count',
+            color='Cloud platform',
+            labels={'date_creation': 'Month', 'Count': 'Number of Listings'},
+            line_shape='linear'
+        )
+
+        st.plotly_chart(fig_time_evolution)
+    else:
+        st.write("No data available for the selected skills for plotting.")
+else:
+    st.write("No data available for temporal evolution analysis.")
+    

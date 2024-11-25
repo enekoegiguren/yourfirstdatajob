@@ -15,9 +15,16 @@ import matplotlib.pyplot as plt
 
 # Load environment variables from .env
 load_dotenv('../.env')
-current_dir = os.path.dirname(__file__)
-image_path = os.path.join(current_dir, 'logo.png')
+app_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+files_path = os.path.join(app_dir, 'files')
+
+image_path = os.path.join(files_path, 'logo.png')
 image_logo = Image.open(image_path)
+
+data_stack_path = os.path.join(files_path, 'data_stack.png')
+data_stack_path_2 = os.path.join(files_path, 'data_stack_2.png')
+data_stack = Image.open(data_stack_path)
+data_stack_2 = Image.open(data_stack_path_2)
 
 
 
@@ -128,9 +135,10 @@ st.title("""
 
 st.markdown("---")
 
-# Streamlit App Layout
-st.title("Data stack")
-st.write("## Top Demanded Skills: SQL, Python, Cloud .. ❓")
+col1, col2, col3 = st.columns(3)
+with col2:
+    st.image(data_stack, use_column_width=True)
+    st.image(data_stack_2, use_column_width=True)
 
 
 st.markdown("---")

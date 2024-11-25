@@ -11,6 +11,13 @@ home_page = st.Page(
     icon = ":material/home:"
 )
 
+market_data = st.Page(
+    page = 'pages/market_data.py',
+    title = "Market data",
+    icon = ":material/analytics:"
+)
+
+
 statistics = st.Page(
     page = 'pages/analysis_statistics.py',
     title = "Statistics",
@@ -37,6 +44,18 @@ personal = st.Page(
     icon = ":material/person:"
 )
 
+salary = st.Page(
+    page = 'pages/salary_pred.py',
+    title = "Salary prediction",
+    icon = ":material/person:"
+)
+
+network = st.Page(
+    page = 'pages/network.py',
+    title = "Network",
+    icon = ":material/on_device_training:"
+)
+
 contact = st.Page(
     page = 'pages/contact.py',
     title = "Contact me",
@@ -47,7 +66,9 @@ contact = st.Page(
 pg = st.navigation(
     {
         "": [home_page],
-        "Analysis - Insights": [statistics, Data_stack, cloud, personal],
+        "Market trends & Education": [market_data,statistics, Data_stack, cloud],
+        "Profile analysis": [personal, salary],
+        "Network": [network],
         "Contact": [contact]
     }
 )

@@ -12,9 +12,14 @@ from PIL import Image
 # Load environment variables from .env
 load_dotenv('../.env')
 
-current_dir = os.path.dirname(__file__)
-image_path = os.path.join(current_dir, 'logo.png')
+app_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+files_path = os.path.join(app_dir, 'files')
+image_path = os.path.join(files_path, 'logo.png')
 image_logo = Image.open(image_path)
+
+profile_path = os.path.join(files_path, 'profile.png')
+profile = Image.open(profile_path)
+
 
 
 AWS_ACCESS_KEY = os.getenv('AWS_ACCESS_KEY')
@@ -56,12 +61,7 @@ st.title("""
         :blue[yourfirstdatajob]
         """)
 
-
-
 st.markdown("---")
-
-
-
 
 
 
@@ -116,7 +116,7 @@ data = load_data()
 
 # Skills columns
 skills_columns = [
-    'sql', 'python', 'pyspark', 'azure', 'aws', 'gcp', 'etl', 'airflow', 'kafka', 'spark', 
+    'sql', 'python', 'pyspark', 'etl', 'airflow', 'kafka', 'spark', 
     'power_bi', 'tableau', 'snowflake', 'docker', 'kubernetes', 'git', 'data_warehouse', 
     'hadoop', 'mlops', 'data_lake', 'bigquery', 'databricks', 'dbt', 'mlflow', 'java', 
     'scala', 'sas', 'matlab', 'power_query', 'looker', 'apache', 'hive', 'terraform', 
@@ -131,10 +131,14 @@ for col in skills_columns:
     data[col] = data[col].apply(lambda x: 1 if x == 'Y' else 0)
 
 # Streamlit App Layout
-st.title("Your profile analysis")
-st.write("## Which profile are you ❓")
-st.markdown("---")
+# st.title("Your profile analysis")
+# st.write("## Which profile are you ❓")
+# st.markdown("---")
 
+col1, col2, col3 = st.columns(3)
+with col2:
+    st.image(profile, use_column_width=True)
+st.markdown("---")
 
 if not data.empty:
     skill_counts = data[skills_columns].sum().sort_values(ascending=False)
@@ -214,3 +218,47 @@ if selected_skills_for_ranking:
     st.plotly_chart(fig_job_ranking)
 
 
+# Radar Chart Section
+st.write("## Top 8 Skills Demanded Per Job Category")
+st.markdown("---")
+
+# Filter data to include only jobs with at least one skill defined
+has_at_least_one_skill = data[skills_columns].sum(axis=1) > 0
+filtered_data = data[has_at_least_one_skill]
+
+# Group by job_category and calculate percentages
+skill_sums = filtered_data.groupby('job_category')[skills_columns].sum()
+skill_percentages = skill_sums.div(skill_sums.sum(axis=1), axis=0) * 100
+
+# Get the top 8 skills for each job category based on percentages
+top_skills_per_category = {
+    category: row.nlargest(8).index.tolist()
+    for category, row in skill_percentages.iterrows()
+}
+
+# Job category selection
+selected_job_category = st.selectbox(
+    "Select a Job Category to view its top demanded skills:",
+    options=skill_percentages.index,
+    index=skill_percentages.index.get_loc(top_job_category['Job Category'])
+)
+
+# Create radar chart for the selected job category
+if selected_job_category:
+    top_skills = top_skills_per_category[selected_job_category]
+    top_values = skill_percentages.loc[selected_job_category, top_skills].tolist()
+
+    # Radar chart using Plotly
+    fig_radar = px.line_polar(
+        r=top_values + [top_values[0]],  # Close the radar chart loop
+        theta=top_skills + [top_skills[0]],  # Repeat the first skill for closure
+        line_close=True,
+        title=f"Top 8 Skills for {selected_job_category.capitalize()} (in %)",
+        markers=True,
+        template="plotly",
+    )
+    fig_radar.update_traces(fill='toself', line_color='blue')
+    fig_radar.update_layout(height=600)  # Adjust height if needed
+
+    # Display radar chart
+    st.plotly_chart(fig_radar)

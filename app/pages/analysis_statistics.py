@@ -2,6 +2,7 @@ import streamlit as st
 import boto3
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 from io import BytesIO
 from dotenv import load_dotenv
 
@@ -13,9 +14,19 @@ import re
 
 # Load environment variables from .env
 load_dotenv('../.env')
-current_dir = os.path.dirname(__file__)
-image_path = os.path.join(current_dir, 'logo.png')
+
+app_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+
+
+files_path = os.path.join(app_dir, 'files')
+
+image_path = os.path.join(files_path, 'logo.png')
 image_logo = Image.open(image_path)
+
+statistics_path = os.path.join(files_path, 'statistics.png')
+statistics = Image.open(statistics_path)
+
+
 
 # Access the environment variables
 AWS_ACCESS_KEY = os.getenv('AWS_ACCESS_KEY')
@@ -108,6 +119,12 @@ def display_big_metric(title, value, delta=None):
 
 # Fetch data
 data = load_data()
+number_of_jobs = len(data)
+jobs_with_salary = len(data[data['avg_salary'].notnull()])
+jobs_with_experience = len(data[data['experience_bool'] != 'N'])
+
+percent_with_salary = (jobs_with_salary / number_of_jobs) * 100 if number_of_jobs > 0 else 0
+percent_with_experience = (jobs_with_experience / number_of_jobs) * 100 if number_of_jobs > 0 else 0
 
 data_experience = data[data['experience'].notnull()]
 data_experience['experience'] = data_experience['experience'].astype(int) 
@@ -122,7 +139,11 @@ st.title("""
 st.markdown("---")
 
 # ---- Analysis Page Content ----
-st.title("Statistics")
+col1, col2, col3 = st.columns(3)
+with col2:
+    st.image(statistics, use_column_width=True)
+st.markdown("---")
+
 
 st.write("## Experience and salary by job .. ❓ ")
 

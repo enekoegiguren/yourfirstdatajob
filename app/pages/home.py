@@ -12,9 +12,31 @@ from datetime import datetime
 
 # Load environment variables from .env
 load_dotenv('../.env')
-current_dir = os.path.dirname(__file__)
-image_path = os.path.join(current_dir, 'logo.png')
-image_logo = Image.open(image_path)
+app_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+
+
+files_path = os.path.join(app_dir, 'files')
+
+logo_path = os.path.join(files_path, 'logo.png')
+image_logo = Image.open(logo_path)
+
+slogan_path = os.path.join(files_path, '1_datamarket.png')
+slogan = Image.open(slogan_path)
+steps_path = os.path.join(files_path, '2_steps.png')
+steps = Image.open(steps_path)
+market_trends_path = os.path.join(files_path, '3_market_trends.png')
+market_trends = Image.open(market_trends_path)
+education_path = os.path.join(files_path, '4_education.png')
+education = Image.open(education_path)
+impostor_path = os.path.join(files_path, '5_impostor.png')
+impostor = Image.open(impostor_path)
+impostor_quest_path = os.path.join(files_path, '6_imp_questions.png')
+impostor_quest = Image.open(impostor_quest_path)
+network_path = os.path.join(files_path, '7_network.png')
+network = Image.open(network_path)
+
+network_1_path = os.path.join(files_path, 'network_1.png')
+network_1 = Image.open(network_1_path)
 
 
 
@@ -57,7 +79,23 @@ def format_salary(value):
 
 
 data = load_data()
+
 data = data[(data['year'] > 2023) & (data['month'] > 5)]
+skills_columns = [
+    'sql', 'python', 'pyspark', 'azure', 'aws', 'gcp', 'etl', 'airflow', 'kafka', 'spark', 
+    'power_bi', 'tableau', 'snowflake', 'docker', 'kubernetes', 'git', 'data_warehouse', 
+    'hadoop', 'mlops', 'data_lake', 'bigquery', 'databricks', 'dbt', 'mlflow', 'java', 
+    'scala', 'sas', 'matlab', 'power_query', 'looker', 'apache', 'hive', 'terraform', 
+    'jenkins', 'gitlab', 'machine_learning', 'deep_learning', 'nlp', 'api', 'pipeline', 
+    'data_governance', 'erp', 'ssis', 'ssas', 'ssrs', 'ssms', 'postgre', 'mysql', 'mongodb', 
+    'cloud', 'synapse', 'blobstorage', 'azure_devops', 'fabric', 'glue', 'redshift', 's3', 
+    'lambda', 'emr', 'athena', 'kinesis', 'rds', 'sagemaker'
+]
+
+# Convert 'Y'/'N' to binary values (1 for Y, 0 for N)
+for col in skills_columns:
+    data[col] = data[col].apply(lambda x: 1 if x == 'Y' else 0)
+
 
 
 max_extracted_date = data['extracted_date'].max()
@@ -113,24 +151,23 @@ def display_big_metric(title, value, delta=None):
     )
 
 
-#col1, col2 = st.columns([1, 3])  # Adjust the width ratio as needed
-
-
-#with col1:
-#    st.image(image_logo, use_column_width=True)  # Replace with your logo path
-
-#with col2:
 st.title("""
         :blue[yourfirstdatajob]
         """)
 
-st.markdown("---")
-st.write(""" 
-        #### Land _Your First Data Job_ or Level Up Your Career with :blue[Real Market Data & Insights!]
-        """)
 
 st.markdown("---")
+col1, col2 = st.columns(2)
+with col1:
+    st.image(slogan, use_column_width=True)
+with col2:
+    st.image(steps, use_column_width=True)
 
+    
+st.header(""" 
+            Land _Your First Data Job_ or Level Up Your Career with :blue[Real Market Data & Insights!]
+            """)
+st.markdown("---")
 st.subheader("""
     Daily data analysis from France Travail API gives you an edge 👇
             """)
@@ -138,222 +175,39 @@ st.subheader("""
     Before another Bootcamp or Udemy Course, _take the next step with real data insights_ to :blue[boost your career!]
             """)
 
+
+### MARKET TRENDS
 st.markdown("---")
-if not data.empty:
-    number_of_jobs = len(data)
-    # Get the top two most demanded job categories
-    top_categories = data['job_category'].value_counts().head(3)
-    most_demanded_category_1 = top_categories.index[0] if len(top_categories) > 0 else None
-    most_demanded_category_2 = top_categories.index[1] if len(top_categories) > 1 else None
-    most_demanded_category_3 = top_categories.index[2] if len(top_categories) > 1 else None
 
-    # Calculate median experience needed and average salary
-    experience_data = data[data['experience'] > 0]
-    average_experience = experience_data['experience'].mean() if not experience_data['experience'].isnull().all() else None
-    
-    salary_data = data[(data['avg_salary'] > 0) & (data['avg_salary']< 300000)]
-    avg_salary = salary_data['avg_salary'].mean() if not salary_data['avg_salary'].isnull().all() else None
-    
-    contract_counts = data['contract_type'].value_counts()
-    total_contracts = contract_counts.sum()
-    top_contract_type = contract_counts.idxmax()
-    top_contract_percentage = (contract_counts.max() / total_contracts) * 100
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        display_big_metric("Number of jobs analyzed", number_of_jobs)
-    with col2:
-        display_big_metric("Average salary ", format_salary(avg_salary))
-    with col3:
-        display_big_metric("Average experience ", f"{average_experience:.1f} years")
-    with col4:
-        display_big_metric("Permanent contract", f"{top_contract_percentage:.1f}%")
-        
-st.markdown("---")
-# Calculate additional metrics
-total_jobs = len(data)
-jobs_with_salary = len(data[data['avg_salary'].notnull()])
-jobs_with_experience = len(data[data['experience_bool'] != 'N'])
-
-percent_with_salary = (jobs_with_salary / total_jobs) * 100 if total_jobs > 0 else 0
-percent_with_experience = (jobs_with_experience / total_jobs) * 100 if total_jobs > 0 else 0
-
-# Add two new columns below the existing metrics
+col1, col2, col3 = st.columns(3)
+with col2:
+    st.image(market_trends, use_column_width=True)
 col1, col2 = st.columns(2)
-
 with col1:
+    number_of_jobs = len(data)
+    jobs_with_salary = len(data[data['avg_salary'].notnull()])
+    jobs_with_experience = len(data[data['experience_bool'] != 'N'])
+
+    percent_with_salary = (jobs_with_salary / number_of_jobs) * 100 if number_of_jobs > 0 else 0
+    percent_with_experience = (jobs_with_experience / number_of_jobs) * 100 if number_of_jobs > 0 else 0
+    display_big_metric("Number of jobs analyzed", number_of_jobs)
     display_big_metric("Jobs with Salary Specified", f"{percent_with_salary:.1f}%")
-
-with col2:
     display_big_metric("Jobs with Experience Specified", f"{percent_with_experience:.1f}%")
-st.markdown("---")
-
-# ---- Most Demanded Job Categories Section ----
-st.write("### Most demanded job categories")
-
-if not data.empty:
-
-    most_demanded_jobs = (
-        data['job_category']
-        .value_counts()
-        .sort_values(ascending=False)
-        .head(10)
-    )
-
-    # Calculate the percentage for each category
-    total_jobs = most_demanded_jobs.sum()  # Total number of jobs
-    most_demanded_jobs_percentage = (most_demanded_jobs / total_jobs) * 100
-    most_demanded_jobs_percentage = most_demanded_jobs_percentage.sort_values(ascending=True)
-
-    # Plot using Plotly
-    fig = go.Figure(data=[
-        go.Bar(
-            x=most_demanded_jobs_percentage.values,  # X-axis: percentage values
-            y=most_demanded_jobs_percentage.index,  # Y-axis: job categories
-            orientation='h',  # 'h' indicates horizontal bars
-            text=[f'{value:.0f}%' for value in most_demanded_jobs_percentage.values],  # Text: formatted percentages
-            textposition='auto',
-            textfont=dict(size=22)
-        )
-    ])
-
-    fig.update_layout(
-        #title="Top 10 Most Demanded Job Categories (Percentage)",
-        xaxis_title="Job Category",
-        yaxis_title="Percentage of Jobs (%)",
-        template="plotly_white",
-        bargap = 0.05,
-        height = 600
-    )
-
-    st.plotly_chart(fig)
     
-
-
-st.markdown("---")
-
-
-# ---- Filter Section ----
-st.write("### Filter Options")
-col1, col2, col3, col4 = st.columns(4)
-
-with col1:
-    job_categories = data['job_category'].unique().tolist()
-    selected_category = st.selectbox("Select Job Category", options=["All"] + job_categories)
-
+    
 with col2:
-    years = data['year'].unique().tolist()
-    selected_year = st.selectbox("Select Year", options=["All"] + years)
 
-with col3:
-    months = data['month'].unique().tolist()
-    selected_month = st.selectbox("Select Month", options=["All"] + months)
-
-
-with col4:
-    # Add salary filter using slider
-    max_salary_data = data[data['avg_salary'] < 300000]
-    max_salary = int(max_salary_data['avg_salary'].max())
-    salary_range = st.slider(
-        "Select Salary Range (€)", 
-        min_value=0, 
-        max_value=max_salary, 
-        value=(0, max_salary), 
-        step=5000,
-        format="€%d"
-    )
-# Apply filters to data
-filtered_data = data.copy()
-
-# Apply the selected filters to the dataset
-if selected_category != "All":
-    filtered_data = filtered_data[filtered_data['job_category'] == selected_category]
-if selected_year != "All":
-    filtered_data = filtered_data[filtered_data['year'] == selected_year]
-if selected_month != "All":
-    filtered_data = filtered_data[filtered_data['month'] == selected_month]
+    df = data.copy()
     
 
-
-
-# Apply filtering based on the dynamic max_salary
-if salary_range != (0, max_salary):
-    filtered_data = filtered_data[
-        (filtered_data['avg_salary'] >= salary_range[0]) & 
-        (filtered_data['avg_salary'] <= salary_range[1])
-    ]
-
-# ---- Check if data is empty after filtering ----
-if filtered_data.empty:
-    st.write("No data available for the selected filters.")
-else:
-    # ---- KPIs Calculation ----
-    len_data = len(filtered_data)
-    avg_experience_data = filtered_data[filtered_data['experience'] > 0]
-    average_experience = avg_experience_data['experience'].mean() if not avg_experience_data['experience'].isnull().all() else 0
-
-    # Calculate the contract type counts and percentages
-    contract_counts = filtered_data['contract_type'].value_counts()
-    total_contracts = contract_counts.sum()
-    top_contract_type = contract_counts.idxmax() if not contract_counts.empty else "N/A"
-    top_contract_percentage = (contract_counts.max() / total_contracts) * 100 if total_contracts > 0 else 0
-
-    # Salary calculation
-    filtered_data_salary = filtered_data[(filtered_data['avg_salary'] < 300000) & (filtered_data['avg_salary'] > 0)]
-   # filtered_data_salary = filtered_data[(filtered_data['avg_salary'] > 0)]
-    min_salary = filtered_data_salary['avg_salary'].min() if not filtered_data_salary['avg_salary'].isnull().all() else 0
-    max_salary = filtered_data_salary['avg_salary'].max() if not filtered_data_salary['avg_salary'].isnull().all() else 0
-    average_salary = filtered_data_salary['avg_salary'].mean() if not filtered_data_salary['avg_salary'].isnull().all() else 0
-
-    # ---- KPI Section ----
-    st.write("### Key Performance Indicators (KPIs)")
-    col1, col2, col3, col4, col5 = st.columns(5)
-
-    with col1:
-        display_big_metric("Number of jobs analyzed", f"{len_data}") 
-
-    with col2:
-        # Check if salary data is available, else display a message
-        if average_salary == 0:
-            display_big_metric("Average Salary (€)", "No salary data informed")
-        else:
-            display_big_metric("Average Salary (€)", format_salary(average_salary))
-
-    with col3:
-        # Check if min or max salary data is available, else display a message
-        if min_salary == 0 and max_salary == 0:
-            display_big_metric("Salary Range(€)", "No salary data informed")
-        else:
-            display_big_metric("Salary Range(€)", f"{format_salary(min_salary)} - {format_salary(max_salary)}")
-
-    with col4:
-        display_big_metric("Average Experience", f"{average_experience:.1f} years")
-
-    with col5:
-        display_big_metric("Permanent contract", f"{top_contract_percentage:.1f}%")
-        
-    st.markdown("---")
-
-    # Now we define the columns for the charts
-    col1, col2 = st.columns(2)
-
-# Determine the column to use based on the date
-with col1:
-    # Job time series data
-    st.write("### Number of jobs over the last month")
-    df = filtered_data.copy()
-    
-    # Ensure both columns are datetime
     df['date_creation'] = pd.to_datetime(df['date_creation'])
     df['extracted_date'] = pd.to_datetime(df['extracted_date'])
 
-    # Use the appropriate column for each row
     df['effective_date'] = df.apply(
         lambda row: row['date_creation'] if row['extracted_date'] <= pd.Timestamp('2024-11-04') else row['extracted_date'], 
         axis=1
     )
 
-    # Filter to show data for the last month
     one_month_ago = pd.Timestamp.now() - pd.DateOffset(months=1)
     df_filtered = df[df['effective_date'] >= one_month_ago]
 
@@ -366,6 +220,7 @@ with col1:
             job_counts, 
             x='effective_date', 
             y='number_of_jobs',
+            title="Evolution of the jobs extracted",
             labels={'effective_date': 'Date', 'number_of_jobs': 'Number of Jobs'},
             markers=True
         )
@@ -375,16 +230,58 @@ with col1:
             fill='tozeroy',
             mode='lines+markers'
         )
-        fig.update_layout(height=700)
+        fig.update_layout(height=500)
 
         st.plotly_chart(fig)
+        
+col1, col2 = st.columns(2)
 
-    with col2:
-        # ---- Job Locations Map Section ----
-        st.write("### Job Locations Map")
-        if not filtered_data.empty:
-            job_counts = filtered_data.groupby(['latitude', 'longitude']).size().reset_index(name='job_count')
-            fig = px.scatter_mapbox(
+with col1:
+    st.write("### Most demanded job categories")
+
+    if not data.empty:
+
+        most_demanded_jobs = (
+            data['job_category']
+            .value_counts()
+            .sort_values(ascending=False)
+            .head(10)
+        )
+
+
+        total_jobs = most_demanded_jobs.sum()  
+        most_demanded_jobs_percentage = (most_demanded_jobs / total_jobs) * 100
+        most_demanded_jobs_percentage = most_demanded_jobs_percentage.sort_values(ascending=True)
+
+
+        fig = go.Figure(data=[
+            go.Bar(
+                x=most_demanded_jobs_percentage.values,  
+                y=most_demanded_jobs_percentage.index,  
+                orientation='h', 
+                text=[f'{value:.0f}%' for value in most_demanded_jobs_percentage.values], 
+                textposition='auto',
+                textfont=dict(size=22)
+            )
+        ])
+
+        fig.update_layout(
+
+            xaxis_title="Job Category",
+            yaxis_title="Percentage of Jobs (%)",
+            template="plotly_white",
+            bargap = 0.05,
+            height = 600
+        )
+
+        st.plotly_chart(fig)
+    
+with col2:
+
+    st.write("### Job Locations Map")
+    if not data.empty:
+        job_counts = data.groupby(['latitude', 'longitude']).size().reset_index(name='job_count')
+        fig = px.scatter_mapbox(
                 job_counts,
                 lat="latitude",
                 lon="longitude",
@@ -393,60 +290,214 @@ with col1:
                 size_max=15,
                 zoom=5,
                 mapbox_style="carto-positron",
-            )
-            fig.update_layout(
+        )
+        fig.update_layout(
                 autosize=False,
                 width=1000,
                 height=700
-            )
-            st.plotly_chart(fig)
-        else:
-            st.write("No data available to display on the map.")
+        )
+        st.plotly_chart(fig)
+    else:
+        st.write("No data available to display on the map.")
+
+
+### EDUCATION
 
 
 st.markdown("---")
+ 
+col1, col2, col3 = st.columns(3)
+
+with col2:
+    st.image(education, use_column_width=True)
+    
+    
+rows_with_skill = data[skills_columns].any(axis=1).sum()
+perc_rows_with_skill = rows_with_skill / len(data) *100
+skill_counts = data[skills_columns].sum().sort_values(ascending=False)
+top_skills = skill_counts.head(3).index.tolist() if not skill_counts.empty else []
+top_skill_1 = top_skills[0] if len(top_skills) > 0 else None
+top_skill_2 = top_skills[1] if len(top_skills) > 1 else None
+top_skill_3 = top_skills[2] if len(top_skills) > 2 else None
+perc_jobs_with_skill_1 = (data[top_skill_1].sum() / len(data)) * 100
+perc_jobs_with_skill_2 = (data[top_skill_2].sum() / len(data)) * 100
+perc_jobs_with_skill_3 = (data[top_skill_3].sum() / len(data)) * 100
+    
+
+col_1, col_2 = st.columns(2)
+    
+with col_1:
+    display_big_metric("Job % with skills demanded", f"{perc_rows_with_skill:.0f}%")
+    
+    #Insights
+    if perc_rows_with_skill is not None:
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            display_big_metric("Most demanded skill", f"{top_skill_1}: {perc_jobs_with_skill_1:.0f}%")
+        with col2:
+             display_big_metric("Second skill", f"{top_skill_2}: {perc_jobs_with_skill_2:.0f}%")
+        with col3:
+             display_big_metric("Third skill", f"{top_skill_3}: {perc_jobs_with_skill_3:.0f}%")
+    st.write(" ")
+    
 
 
-# ---- Most Demanded Job Categories Section ----
-st.write("### Top company fields demanding data jobs")
+with col_2:
+    st.write("## Temporal evolution of skills")
 
-if not filtered_data.empty:
+    if not data.empty and 'date_creation' in data.columns:
 
-    # Calculate the percentage for each category
-    most_demanded_company_fields = (
-        filtered_data['company_field']
-        .value_counts()
-        .sort_values(ascending=False)
-        .head(10)
-    )
+        data['date_creation'] = pd.to_datetime(data['date_creation'])
 
 
-    # Calculate the percentage for each category
-    #total_jobs = most_demanded_jobs.sum()  # Total number of jobs
-    total_jobs = len(filtered_data)
-    most_demanded_company_field_percentage = (most_demanded_company_fields / total_jobs) * 100
-    most_demanded_company_field_percentage = most_demanded_company_field_percentage.sort_values(ascending=True)
+        filtered_data = data[data[skills_columns].any(axis=1)]
 
-    # Plot using Plotly
-    fig = go.Figure(data=[
-        go.Bar(
-            x=most_demanded_company_field_percentage.values,  # X-axis: percentage values
-            y=most_demanded_company_field_percentage.index,  # Y-axis: job categories
-            orientation='h',  # 'h' indicates horizontal bars
-            text=[f'{value:.0f}%' for value in most_demanded_company_field_percentage.values],  # Text: formatted percentages
-            textposition='auto',
-            textfont=dict(size=22)
+
+        skills_over_time = (filtered_data.groupby(pd.Grouper(key='date_creation', freq='M'))[skills_columns]
+                            .sum()
+                            .reset_index())
+
+
+        skills_long = skills_over_time.melt(id_vars='date_creation', var_name='Skill', value_name='Count')
+
+        all_skills = skills_columns  
+        top_10_skills = skill_counts.head(10).index.tolist()  
+        skills_long_top10 = skills_long[skills_long['Skill'].isin(top_10_skills)]
+        skills_long_top10 = skills_long_top10[skills_long_top10['Count'] > 0]
+        
+        if not skills_long_top10.empty:
+
+            fig_time_evolution = px.line(
+                skills_long_top10,
+                x='date_creation',
+                y='Count',
+                color='Skill',
+                labels={'date_creation': 'Month', 'Count': 'Number of Listings'},
+                line_shape='linear'
+            )
+
+            st.plotly_chart(fig_time_evolution)
+        else:
+            st.write("No data available for the selected skills for plotting.")
+    else:
+        st.write("No data available for temporal evolution analysis.")
+    
+
+### IMPOSTOR
+
+
+st.markdown("---")
+    
+col1, col2, col3 = st.columns(3)
+
+with col2:
+    st.image(impostor, use_column_width=True)
+    
+col_1, col_2 = st.columns(2)
+
+with col_1:
+    st.image(impostor_quest, use_column_width=True)
+
+with col_2:
+
+    skill_counts = data[skills_columns].sum().sort_values(ascending=False)
+
+    if not data.empty:
+        st.write("Tell Us About Yourself")
+
+        # Skill selection for ranking
+        all_skills = skills_columns
+        top_5_skills = skill_counts.head(5).index
+        selected_skills = st.multiselect(
+            "Select the skills you have or want to evaluate:",
+            options=all_skills,
+            default=top_5_skills
         )
-    ])
 
-    fig.update_layout(
-        #title="Top 10 Most Demanded Job Categories (Percentage)",
-        xaxis_title="Company field",
-        yaxis_title="Percentage of Jobs (%)",
-        template="plotly_white",
-        bargap = 0.05,
-        height = 600
-    )
+        # Add experience filter with slider (default range 0-2 years)
+        experience_range = st.slider(
+            "Select the range of experience (in years):",
+            min_value=int(data['experience'].min()),
+            max_value=int(data['experience'].max()),
+            value=(0, 2),  # Set default value to (0, 2) years
+            step=1
+        )
+        st.write(f"Selected Experience Range: {experience_range[0]} - {experience_range[1]} years")
 
-    st.plotly_chart(fig)
+        # Filter data by experience range
+        filtered_data = data[(data['experience'] >= experience_range[0]) & (data['experience'] <= experience_range[1]) & (data['avg_salary']>0)]
+
+        if selected_skills:
+            # Create a boolean mask for any of the selected skills being present
+            mask = filtered_data[selected_skills].any(axis=1)
+
+            # Filter jobs where at least one of the selected skills is present
+            jobs_with_skills = filtered_data[mask]
+
+            # Count jobs by category
+            job_counts = jobs_with_skills['job_category'].value_counts().reset_index()
+            job_counts.columns = ['Job Category', 'Count']
+
+            # Calculate percentage for each job category based on total dataset
+            total_jobs = len(filtered_data)  # Total number of jobs in the filtered dataset
+            job_counts['Percentage'] = (job_counts['Count'] / total_jobs) * 100
+
+            # Display the most fitted job profile
+            if not job_counts.empty:
+                col_1, col_2 = st.columns(2)
+                with col_1:
+                    top_job_category = job_counts.iloc[0]
+                    display_big_metric(f"Matched role:", f"{top_job_category['Job Category']}")
+                with col_2:
+                # Salary Range
+                    salary_rows = jobs_with_skills[jobs_with_skills['job_category'] == top_job_category['Job Category']]
+                    avg_salary = salary_rows['avg_salary'].mean()
+                    display_big_metric(f"Average salary:", f"{format_salary(avg_salary)}")
+
+                # Plot Salary Distribution with more detailed bins
+                st.subheader("Salary Distribution")
+                fig_salary_distribution = px.histogram(
+                    jobs_with_skills,
+                    x='avg_salary',
+                    nbins=50,  # Increased number of bins for more detail
+                    #title="Salary Distribution for Jobs Matching Selected Skills",
+                    labels={'avg_salary': 'Salary (€)'},
+                    opacity=0.7
+                )
+
+                # Update layout to fix the x-axis range from 20000 to 80000
+                fig_salary_distribution.update_layout(
+                    xaxis_title="Salary (€)",
+                    yaxis_title="Frequency",
+                    bargap=0.2,
+                    xaxis=dict(range=[20000, 80000])  # Fixed salary range
+                )
+
+                # Display the updated salary distribution chart
+                st.plotly_chart(fig_salary_distribution)
+            else:
+                st.error("No matching job categories found for the selected skills and experience range.")
+        else:
+            st.info("Please select skills to see matching job profiles.")
+        
+        
+        
+### NETWORK
+st.markdown("---")
+
+col1, col2, col3 = st.columns(3)
+with col2:
+    st.image(network, use_column_width=True)
+    
+st.image(network_1_path, use_column_width=True)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     

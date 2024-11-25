@@ -11,8 +11,11 @@ from PIL import Image
 
 # Load environment variables from .env
 load_dotenv('../.env')
-current_dir = os.path.dirname(__file__)
-image_path = os.path.join(current_dir, 'logo.png')
+app_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+files_path = os.path.join(app_dir, 'files')
+
+
+image_path = os.path.join(files_path, 'logo.png')
 image_logo = Image.open(image_path)
 
 
@@ -66,13 +69,26 @@ st.title("""
 st.markdown("---")
 
 
-# Set page title
-st.title("Contact Me")
+st.title("Built on Data, for Data")
 
-st.write("""
-        Do you want data used on this app for your analysis or any advice for your data career? Feel free to contact me!
+st.header("""
+    Thank you for exploring this project!
+
+    I created Your First Data Job to help individuals make informed decisions about their career paths or educational pursuits. 
+    In a world where decisions are often guided by intuition or feelings, my goal is to provide insights grounded in data. 
+    Whether you're choosing your next role, considering a career shift, or planning your skills development, this project is here to support you with actionable information.
+
+    If you'd like to:
+
+    - Share feedback on the project
+    - Suggest improvements or features
+    - Discuss opportunities for collaboration
+    - Ask questions about data-related careers or training paths
+    
+    Feel free to reach out!
         """)
 
+st.title("Contact Me")
 
 # LinkedIn link
 linkedin_url = "https://www.linkedin.com/in/eneko"  # Replace with your LinkedIn URL
