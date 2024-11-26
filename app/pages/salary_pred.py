@@ -32,6 +32,9 @@ model_exp = Image.open(model_exp_path)
 model_path = os.path.join(files_path, 'model.png')
 model = Image.open(model_path)
 
+model_2_path = os.path.join(files_path, 'model_2.png')
+model_2 = Image.open(model_2_path)
+
 
 AWS_ACCESS_KEY = os.getenv('AWS_ACCESS_KEY')
 AWS_SECRET_KEY = os.getenv('AWS_SECRET_KEY')
@@ -187,10 +190,12 @@ def predict_for_dataset(data):
     data['predicted_salary'] = predicted_salaries
     return data
 
-col1, col2, col3 = st.columns(3)
-with col1:
-    st.image(model, use_column_width=False)
-st.markdown("---")
+
+st.image(model, use_column_width=True)
+    
+
+st.image(model_2, use_column_width=True)
+
 
 col1, col2 = st.columns(2)
 with col1:  
