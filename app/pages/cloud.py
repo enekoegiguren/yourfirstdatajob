@@ -171,6 +171,7 @@ with col1:
 
 # Clean and prepare data for experience and salary comparison
 data['avg_experience'] = data['experience'].fillna(0).apply(lambda x: round(x))
+data = data[(data['max_salary'] < 300000)&(data['max_salary'] > 0)]
 
 # AWS Data
 aws_data = data[data['aws'] == 1]
