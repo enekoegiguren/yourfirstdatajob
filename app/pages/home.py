@@ -80,7 +80,7 @@ def format_salary(value):
 
 data = load_data()
 
-data = data[(data['year'] > 2023) & (data['month'] > 5)]
+data = data[(data['year'] > 2023)]
 skills_columns = [
     'sql', 'python', 'pyspark', 'azure', 'aws', 'gcp', 'etl', 'airflow', 'kafka', 'spark', 
     'power_bi', 'tableau', 'snowflake', 'docker', 'kubernetes', 'git', 'data_warehouse', 

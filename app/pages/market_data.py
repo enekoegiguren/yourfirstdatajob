@@ -114,7 +114,7 @@ def display_big_metric(title, value, delta=None):
 
 # Fetch data
 data = load_data()
-data = data[(data['year'] > 2023) & (data['month'] > 5)]
+data = data[(data['year'] > 2023)]
 number_of_jobs = len(data)
 jobs_with_salary = len(data[data['avg_salary'].notnull()])
 jobs_with_experience = len(data[data['experience_bool'] != 'N'])
